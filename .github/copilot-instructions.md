@@ -61,6 +61,12 @@ Full-stack multi-branch customer management system with role-based access contro
 - Redux slices for: auth, branches, customers, staff
 - API calls via RTK Query or Axios with interceptors for token refresh
 
+**Role-Based UI Routing**:
+- **Admin users**: Full desktop Layout with sidebar navigation (Dashboard, Branches, Customers, Staff, Admins)
+- **Staff users**: Automatically redirected to `/staff-mobile` - mobile-first UI without desktop Layout
+- `RoleBasedRoute` component handles automatic redirection based on user role
+- Staff cannot access admin-only routes (enforced by `ProtectedRoute` with `adminOnly` prop)
+
 ## Development Commands
 
 ```bash

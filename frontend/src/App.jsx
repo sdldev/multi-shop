@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { store } from './redux/store';
 import { ToastProvider } from './components/ui/toast';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleBasedRoute from './components/RoleBasedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -19,12 +20,24 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            
+            {/* Staff Mobile Route (standalone, no Layout) */}
+            <Route
+              path="/staff-mobile"
+              element={
+                <ProtectedRoute>
+                  <StaffMobile />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Routes (with Layout) */}
             <Route
               path="/"
               element={
-                <ProtectedRoute>
+                <RoleBasedRoute>
                   <Layout />
-                </ProtectedRoute>
+                </RoleBasedRoute>
               }
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
@@ -43,14 +56,6 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <Staff />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="staff-mobile"
-                element={
-                  <ProtectedRoute>
-                    <StaffMobile />
                   </ProtectedRoute>
                 }
               />
