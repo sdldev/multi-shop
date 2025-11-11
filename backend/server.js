@@ -58,7 +58,7 @@ app.get('/', (req, res) => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Multi-Shop API Documentation',
-  customfavIcon: '/favicon.ico'
+  customFavIcon: '/favicon.ico'
 }));
 
 app.use('/api/auth', authRoutes);

@@ -54,7 +54,7 @@ CREATE TABLE customers (
   full_name VARCHAR(50) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   phone_number VARCHAR(20),
-  address TEXT(500),
+  address VARCHAR(500),
   registration_date DATE NOT NULL,
   status VARCHAR(20) DEFAULT 'Active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

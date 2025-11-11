@@ -191,10 +191,17 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
       });
     }
 
-    const sanitizedUsername = validator.escape(username.trim());
+    const cleanUsername = username.trim();
+    
+    if (!/^[a-zA-Z0-9_-]+$/.test(cleanUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username can only contain letters, numbers, underscores, and hyphens'
+      });
+    }
 
-    const usernameInUsers = await query('SELECT user_id FROM users WHERE username = ?', [sanitizedUsername]);
-    const usernameInStaff = await query('SELECT staff_id FROM staff WHERE username = ?', [sanitizedUsername]);
+    const usernameInUsers = await query('SELECT user_id FROM users WHERE username = ?', [cleanUsername]);
+    const usernameInStaff = await query('SELECT staff_id FROM staff WHERE username = ?', [cleanUsername]);
 
     if (usernameInUsers.length > 0 || usernameInStaff.length > 0) {
       return res.status(400).json({
@@ -207,7 +214,7 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
 
     const sanitizedData = {
       branch_id: parseInt(branch_id),
-      username: sanitizedUsername,
+      username: cleanUsername,
       password_hash: passwordHash,
       full_name: validator.escape(full_name.trim())
     };
@@ -311,9 +318,18 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
       }
     }
 
+    let cleanUsername = username ? username.trim() : existingStaff[0].username;
+    
+    if (username && !/^[a-zA-Z0-9_-]+$/.test(cleanUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username can only contain letters, numbers, underscores, and hyphens'
+      });
+    }
+
     let sanitizedData = {
       branch_id: branch_id ? parseInt(branch_id) : existingStaff[0].branch_id,
-      username: username ? validator.escape(username.trim()) : existingStaff[0].username,
+      username: cleanUsername,
       full_name: full_name ? validator.escape(full_name.trim()) : existingStaff[0].full_name,
       password_hash: existingStaff[0].password_hash
     };

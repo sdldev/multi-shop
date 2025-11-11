@@ -330,16 +330,6 @@ router.delete('/:id', authenticateToken, authorizeRole('admin'), async (req, res
       });
     }
 
-    const staffCount = await query('SELECT COUNT(*) as count FROM staff WHERE branch_id = ?', [id]);
-    const customerCount = await query('SELECT COUNT(*) as count FROM customers WHERE branch_id = ?', [id]);
-
-    if (staffCount[0].count > 0 || customerCount[0].count > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete branch with existing staff or customers. Please reassign or delete them first.'
-      });
-    }
-
     await query('DELETE FROM branches WHERE branch_id = ?', [id]);
 
     res.json({

@@ -55,14 +55,14 @@ router.post('/login', loginRateLimiter, async (req, res) => {
       });
     }
 
-    const sanitizedUsername = validator.escape(username.trim());
+    const cleanUsername = username.trim();
 
     let user = null;
     let userType = null;
 
     const adminResult = await query(
       'SELECT user_id as id, username, password_hash, full_name, role FROM users WHERE username = ?',
-      [sanitizedUsername]
+      [cleanUsername]
     );
 
     if (adminResult.length > 0) {
@@ -71,7 +71,7 @@ router.post('/login', loginRateLimiter, async (req, res) => {
     } else {
       const staffResult = await query(
         'SELECT staff_id as id, branch_id, username, password_hash, full_name, role FROM staff WHERE username = ?',
-        [sanitizedUsername]
+        [cleanUsername]
       );
 
       if (staffResult.length > 0) {
@@ -203,13 +203,8 @@ router.post('/refresh', async (req, res) => {
       });
     }
 
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, user) => {
-      if (err) {
-        return res.status(403).json({
-          success: false,
-          message: 'Invalid or expired refresh token'
-        });
-      }
+    try {
+      const user = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
       const tokenPayload = {
         id: user.id,
@@ -235,7 +230,12 @@ router.post('/refresh', async (req, res) => {
           accessToken
         }
       });
-    });
+    } catch (err) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid or expired refresh token'
+      });
+    }
   } catch (error) {
     console.error('Token refresh error:', error);
     res.status(500).json({

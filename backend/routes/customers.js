@@ -242,7 +242,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRat
     const sanitizedData = {
       branch_id: parseInt(branch_id),
       full_name: validator.escape(full_name.trim()),
-      email: validator.normalizeEmail(email.trim()),
+      email: email.trim().toLowerCase(),
       phone_number: phone_number ? validator.escape(phone_number.trim()) : null,
       address: address ? validator.escape(address.trim()) : null,
       registration_date: registration_date,
@@ -372,7 +372,7 @@ router.put('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
 
     const sanitizedData = {
       full_name: full_name ? validator.escape(full_name.trim()) : existingCustomer[0].full_name,
-      email: email ? validator.normalizeEmail(email.trim()) : existingCustomer[0].email,
+      email: email ? email.trim().toLowerCase() : existingCustomer[0].email,
       phone_number: phone_number !== undefined ? (phone_number ? validator.escape(phone_number.trim()) : null) : existingCustomer[0].phone_number,
       address: address !== undefined ? (address ? validator.escape(address.trim()) : null) : existingCustomer[0].address,
       status: status || existingCustomer[0].status

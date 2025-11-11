@@ -20,10 +20,6 @@ const options = {
       {
         url: 'http://localhost:5000',
         description: 'Development server'
-      },
-      {
-        url: 'http://localhost:5000',
-        description: 'Production server'
       }
     ],
     components: {

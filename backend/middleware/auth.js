@@ -14,16 +14,16 @@ export function authenticateToken(req, res, next) {
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Invalid or expired token' 
-      });
-    }
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET);
     req.user = user;
     next();
-  });
+  } catch (err) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Invalid or expired token' 
+    });
+  }
 }
 
 export function authorizeRole(...roles) {
