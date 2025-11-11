@@ -5,7 +5,7 @@
 
 Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 - **Backend**: Node.js + Express + MariaDB + **Swagger API Documentation** ✅
-- **Frontend**: React + Vite + Shadcn UI + Tailwind CSS (Coming Soon)
+- **Frontend**: React + Vite + Shadcn UI + Tailwind CSS ✅
 - **Autentikasi**: JWT (Access + Refresh Token)
 - **Keamanan**: Rate Limiting, Input Sanitasi, Bcrypt Hash
 
@@ -45,11 +45,43 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
    http://localhost:5000/api-docs
    ```
 
+📖 **Detailed Guide**: [Backend Quick Start](backend/QUICK_START.md)
+
+### Frontend (✅ Complete)
+
+1. **Install Dependencies:**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. **Configure Environment:**
+   ```bash
+   cp .env.example .env
+   # Update VITE_API_BASE_URL if needed (default: http://localhost:5000/api)
+   ```
+
+3. **Start Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Access Application:**
+   ```
+   http://localhost:3000
+   ```
+
+5. **Build for Production:**
+   ```bash
+   npm run build
+   npm run preview
+   ```
+
 **Default Credentials:**
 - Admin: `admin` / `Admin@123`
 - Staff: `staff_jakarta` / `Staff@123`
 
-📖 **Detailed Guide**: [Backend Quick Start](backend/QUICK_START.md)
+📖 **Detailed Guide**: [Frontend README](frontend/README.md)
 
 ---
 
@@ -89,14 +121,16 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 - **Validator** (sanitasi input)
 - **Express Rate Limit** (anti-brute force)
 
-### Frontend 🔜
-- **React 18** + **Vite**
+### Frontend ✅
+- **React 18+** + **Vite**
 - **Shadcn UI** (komponen UI)
-- **Tailwind CSS** (styling)
-- **React Router** (navigasi)
+- **Tailwind CSS v4** (styling)
+- **React Router v6** (navigasi)
 - **React Hook Form + Yup** (validasi form)
 - **Redux Toolkit** (state management)
-- **Axios** (HTTP client)
+- **Axios** (HTTP client dengan interceptors)
+- **Recharts** (data visualization)
+- **Lucide React** (icons)
 
 ---
 
