@@ -12,8 +12,7 @@ import {
   Building2, 
   LogOut,
   Menu,
-  X,
-  Smartphone
+  X
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -47,7 +46,6 @@ export default function Layout() {
   };
 
   const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'staff';
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, show: true },
@@ -55,7 +53,6 @@ export default function Layout() {
     { name: 'Customers', path: '/customers', icon: Users, show: true },
     { name: 'Staff', path: '/staff', icon: UserCog, show: isAdmin },
     { name: 'Admins', path: '/admins', icon: UserCog, show: isAdmin },
-    { name: 'Portal Staff (Mobile)', path: '/staff-mobile', icon: Smartphone, show: isStaff },
   ].filter(item => item.show);
 
   return (
