@@ -3,7 +3,6 @@ import { Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import validator from 'validator';
 import { customersAPI, branchesAPI, authAPI } from '../utils/api';
-import { validatePassword } from '../utils/validation';
 import { logout } from '../redux/authSlice';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -26,13 +25,13 @@ export default function StaffMobile() {
   const [currentView, setCurrentView] = useState('home'); // home, customer, profile
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
     full_name: '',
-    phone: '',
+    phone_number: '',
+    code: '',
     address: '',
     status: 'Active',
+    registration_date: new Date().toISOString().split('T')[0], // Today's date
   });
-  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -266,14 +265,6 @@ export default function StaffMobile() {
 
   const handleAddCustomer = async (e) => {
     e.preventDefault();
-    setPasswordError('');
-
-    // Validate password
-    const validation = validatePassword(formData.password);
-    if (!validation.isValid) {
-      setPasswordError(validation.errors.join('. '));
-      return;
-    }
 
     // Validate email
     if (!validator.isEmail(formData.email)) {
@@ -284,13 +275,14 @@ export default function StaffMobile() {
     setLoading(true);
     try {
       const sanitizedData = {
-        email: validator.escape(formData.email.trim()),
-        password: formData.password,
-        full_name: validator.escape(formData.full_name.trim()),
-        phone: formData.phone ? validator.escape(formData.phone.trim()) : '',
-        address: formData.address ? validator.escape(formData.address.trim()) : '',
-        status: formData.status,
         branch_id: user.branch_id,
+        email: formData.email.trim().toLowerCase(),
+        full_name: validator.escape(formData.full_name.trim()),
+        phone_number: formData.phone_number ? validator.escape(formData.phone_number.trim()) : '',
+        code: formData.code ? validator.escape(formData.code.trim()) : '',
+        address: formData.address ? validator.escape(formData.address.trim()) : '',
+        registration_date: formData.registration_date,
+        status: formData.status,
       };
 
       await customersAPI.create(sanitizedData);
@@ -314,13 +306,13 @@ export default function StaffMobile() {
   const resetForm = () => {
     setFormData({
       email: '',
-      password: '',
       full_name: '',
-      phone: '',
+      phone_number: '',
+      code: '',
       address: '',
       status: 'Active',
+      registration_date: new Date().toISOString().split('T')[0],
     });
-    setPasswordError('');
   };
 
   const handleLogout = async () => {
@@ -377,9 +369,9 @@ export default function StaffMobile() {
 
       {/* Add Customer Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50">
-          <Card className="w-full max-w-lg rounded-t-3xl rounded-b-none max-h-[90vh] overflow-y-auto">
-            <CardHeader className="relative sticky top-0 bg-white z-10 border-b">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end justify-center z-50">
+          <Card className="w-full max-w-lg rounded-t-3xl rounded-b-none max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900">
+            <CardHeader className="relative sticky top-0 bg-white dark:bg-gray-900 z-10 border-b">
               <Button
                 variant="ghost"
                 size="icon"
@@ -397,6 +389,17 @@ export default function StaffMobile() {
             <CardContent className="p-6">
               <form onSubmit={handleAddCustomer} className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="full_name">Nama Lengkap *</Label>
+                  <Input
+                    id="full_name"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    required
+                    placeholder="Nama lengkap customer"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
@@ -409,47 +412,23 @@ export default function StaffMobile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
+                  <Label htmlFor="phone_number">Nomor Telepon</Label>
                   <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value });
-                      setPasswordError('');
-                    }}
-                    required
-                    placeholder="Min 8 karakter"
-                  />
-                  {passwordError && (
-                    <p className="text-xs text-destructive">{passwordError}</p>
-                  )}
-                  {!passwordError && (
-                    <p className="text-xs text-muted-foreground">
-                      Min 8 karakter, 1 huruf besar, 1 angka, 1 karakter khusus
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Nama Lengkap *</Label>
-                  <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    required
-                    placeholder="Nama lengkap customer"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Nomor Telepon</Label>
-                  <Input
-                    id="phone"
+                    id="phone_number"
                     type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                     placeholder="08xxxxxxxxxx"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="code">Kode Customer</Label>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="Kode unik customer (opsional)"
                   />
                 </div>
 
@@ -460,6 +439,17 @@ export default function StaffMobile() {
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="Alamat lengkap"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="registration_date">Tanggal Registrasi *</Label>
+                  <Input
+                    id="registration_date"
+                    type="date"
+                    value={formData.registration_date}
+                    onChange={(e) => setFormData({ ...formData, registration_date: e.target.value })}
+                    required
                   />
                 </div>
 
@@ -501,9 +491,9 @@ export default function StaffMobile() {
 
       {/* Customer Detail Modal */}
       {showDetailModal && selectedCustomer && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader className="relative">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900">
+            <CardHeader className="relative bg-white dark:bg-gray-900">
               <Button
                 variant="ghost"
                 size="icon"
@@ -640,14 +630,6 @@ export default function StaffMobile() {
                 >
                   Tutup
                 </Button>
-                {selectedCustomer.email && (
-                  <Button
-                    className="flex-1"
-                    onClick={() => window.location.href = `mailto:${selectedCustomer.email}`}
-                  >
-                    Kirim Email
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
