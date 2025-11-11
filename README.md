@@ -5,7 +5,7 @@
 
 Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 - **Backend**: Node.js + Express + MariaDB
-- **Frontend**: React + Vite + Material-UI (MUI)
+- **Frontend**: React + Vite + Shadcn UI + Tailwind CSS
 - **Autentikasi**: JWT (Access + Refresh Token)
 - **Keamanan**: Rate Limiting, Input Sanitasi, Bcrypt Hash
 
