@@ -169,6 +169,8 @@ router.get('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
  *                 format: email
  *               phone_number:
  *                 type: string
+ *               code:
+ *                 type: string
  *               address:
  *                 type: string
  *               registration_date:
@@ -200,7 +202,7 @@ router.get('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
  */
 router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRateLimiter, authorizeBranch, async (req, res) => {
   try {
-    const { branch_id, full_name, email, phone_number, address, registration_date, status } = req.body;
+    const { branch_id, full_name, email, phone_number, code, address, registration_date, status } = req.body;
 
     if (!branch_id || !full_name || !email || !registration_date) {
       return res.status(400).json({
@@ -244,6 +246,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRat
       full_name: validator.escape(full_name.trim()),
       email: email.trim().toLowerCase(),
       phone_number: phone_number ? validator.escape(phone_number.trim()) : null,
+      code: code ? validator.escape(code.trim()) : null,
       address: address ? validator.escape(address.trim()) : null,
       registration_date: registration_date,
       status: status || 'Active'
@@ -257,8 +260,8 @@ router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRat
     }
 
     const result = await query(
-      'INSERT INTO customers (branch_id, full_name, email, phone_number, address, registration_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [sanitizedData.branch_id, sanitizedData.full_name, sanitizedData.email, sanitizedData.phone_number, sanitizedData.address, sanitizedData.registration_date, sanitizedData.status]
+      'INSERT INTO customers (branch_id, full_name, email, phone_number, code, address, registration_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [sanitizedData.branch_id, sanitizedData.full_name, sanitizedData.email, sanitizedData.phone_number, sanitizedData.code, sanitizedData.address, sanitizedData.registration_date, sanitizedData.status]
     );
 
     const newCustomer = await query('SELECT c.*, b.branch_name FROM customers c LEFT JOIN branches b ON c.branch_id = b.branch_id WHERE c.customer_id = ?', [result.insertId]);
@@ -305,6 +308,8 @@ router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRat
  *                 format: email
  *               phone_number:
  *                 type: string
+ *               code:
+ *                 type: string
  *               address:
  *                 type: string
  *               status:
@@ -334,7 +339,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRat
 router.put('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, email, phone_number, address, status } = req.body;
+    const { full_name, email, phone_number, code, address, status } = req.body;
 
     let sql = 'SELECT * FROM customers WHERE customer_id = ?';
     const params = [id];
@@ -374,6 +379,7 @@ router.put('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
       full_name: full_name ? validator.escape(full_name.trim()) : existingCustomer[0].full_name,
       email: email ? email.trim().toLowerCase() : existingCustomer[0].email,
       phone_number: phone_number !== undefined ? (phone_number ? validator.escape(phone_number.trim()) : null) : existingCustomer[0].phone_number,
+      code: code !== undefined ? (code ? validator.escape(code.trim()) : null) : existingCustomer[0].code,
       address: address !== undefined ? (address ? validator.escape(address.trim()) : null) : existingCustomer[0].address,
       status: status || existingCustomer[0].status
     };
@@ -386,8 +392,8 @@ router.put('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
     }
 
     await query(
-      'UPDATE customers SET full_name = ?, email = ?, phone_number = ?, address = ?, status = ? WHERE customer_id = ?',
-      [sanitizedData.full_name, sanitizedData.email, sanitizedData.phone_number, sanitizedData.address, sanitizedData.status, id]
+      'UPDATE customers SET full_name = ?, email = ?, phone_number = ?, code = ?, address = ?, status = ? WHERE customer_id = ?',
+      [sanitizedData.full_name, sanitizedData.email, sanitizedData.phone_number, sanitizedData.code, sanitizedData.address, sanitizedData.status, id]
     );
 
     const updatedCustomer = await query('SELECT c.*, b.branch_name FROM customers c LEFT JOIN branches b ON c.branch_id = b.branch_id WHERE c.customer_id = ?', [id]);

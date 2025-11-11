@@ -27,6 +27,7 @@ export default function Customers() {
     full_name: '',
     email: '',
     phone_number: '',
+    code: '',
     address: '',
     branch_id: '',
     status: 'Active',
@@ -82,6 +83,7 @@ export default function Customers() {
         full_name: validator.escape(formData.full_name.trim()),
         email: validator.normalizeEmail(formData.email.trim()),
         phone_number: formData.phone_number ? validator.escape(formData.phone_number.trim()) : '',
+        code: formData.code ? validator.escape(formData.code.trim()) : '',
         address: formData.address ? validator.escape(formData.address.trim()) : '',
         branch_id: isAdmin ? parseInt(formData.branch_id) : user.branch_id,
         status: formData.status,
@@ -125,6 +127,7 @@ export default function Customers() {
       full_name: customer.full_name,
       email: customer.email,
       phone_number: customer.phone_number || '',
+      code: customer.code || '',
       address: customer.address || '',
       branch_id: customer.branch_id.toString(),
       status: customer.status,
@@ -164,6 +167,7 @@ export default function Customers() {
       full_name: '',
       email: '',
       phone_number: '',
+      code: '',
       address: '',
       branch_id: '',
       status: 'Active',
@@ -222,6 +226,7 @@ export default function Customers() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Code</TableHead>
                     {isAdmin && <TableHead>Branch</TableHead>}
                     <TableHead>Status</TableHead>
                     <TableHead>Registered</TableHead>
@@ -234,6 +239,7 @@ export default function Customers() {
                       <TableCell className="font-medium">{customer.full_name}</TableCell>
                       <TableCell>{customer.email}</TableCell>
                       <TableCell>{customer.phone_number || '-'}</TableCell>
+                      <TableCell>{customer.code || '-'}</TableCell>
                       {isAdmin && <TableCell>{customer.branch_name}</TableCell>}
                       <TableCell>
                         <span
@@ -313,6 +319,15 @@ export default function Customers() {
                     id="phone_number"
                     value={formData.phone_number}
                     onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="code">Code</Label>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="e.g., CUST-JKT-001"
                   />
                 </div>
                 <div className="space-y-2">
