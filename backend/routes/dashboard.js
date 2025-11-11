@@ -4,6 +4,21 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Helper function to convert BigInt to Number for JSON serialization
+const convertBigIntToNumber = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj.map(convertBigIntToNumber);
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [
+        key,
+        typeof value === 'bigint' ? Number(value) : convertBigIntToNumber(value)
+      ])
+    );
+  }
+  return typeof obj === 'bigint' ? Number(obj) : obj;
+};
+
 /**
  * @swagger
  * /api/dashboard/stats:
@@ -43,36 +58,36 @@ router.get('/stats', authenticateToken, authorizeRole('admin', 'staff'), async (
 
     if (req.user.role === 'admin') {
       const branchCount = await query('SELECT COUNT(*) as count FROM branches');
-      stats.totalBranches = branchCount[0].count;
+      stats.totalBranches = Number(branchCount[0].count);
 
       const customerCount = await query('SELECT COUNT(*) as count FROM customers');
-      stats.totalCustomers = customerCount[0].count;
+      stats.totalCustomers = Number(customerCount[0].count);
 
       const activeCustomers = await query("SELECT COUNT(*) as count FROM customers WHERE status = 'Active'");
-      stats.activeCustomers = activeCustomers[0].count;
+      stats.activeCustomers = Number(activeCustomers[0].count);
 
       const inactiveCustomers = await query("SELECT COUNT(*) as count FROM customers WHERE status = 'Inactive'");
-      stats.inactiveCustomers = inactiveCustomers[0].count;
+      stats.inactiveCustomers = Number(inactiveCustomers[0].count);
 
       const staffCount = await query('SELECT COUNT(*) as count FROM staff');
-      stats.totalStaff = staffCount[0].count;
+      stats.totalStaff = Number(staffCount[0].count);
 
       const adminCount = await query('SELECT COUNT(*) as count FROM users');
-      stats.totalAdmins = adminCount[0].count;
+      stats.totalAdmins = Number(adminCount[0].count);
     } else {
       stats.totalBranches = 1;
 
       const customerCount = await query('SELECT COUNT(*) as count FROM customers WHERE branch_id = ?', [req.user.branch_id]);
-      stats.totalCustomers = customerCount[0].count;
+      stats.totalCustomers = Number(customerCount[0].count);
 
       const activeCustomers = await query("SELECT COUNT(*) as count FROM customers WHERE branch_id = ? AND status = 'Active'", [req.user.branch_id]);
-      stats.activeCustomers = activeCustomers[0].count;
+      stats.activeCustomers = Number(activeCustomers[0].count);
 
       const inactiveCustomers = await query("SELECT COUNT(*) as count FROM customers WHERE branch_id = ? AND status = 'Inactive'", [req.user.branch_id]);
-      stats.inactiveCustomers = inactiveCustomers[0].count;
+      stats.inactiveCustomers = Number(inactiveCustomers[0].count);
 
       const staffCount = await query('SELECT COUNT(*) as count FROM staff WHERE branch_id = ?', [req.user.branch_id]);
-      stats.totalStaff = staffCount[0].count;
+      stats.totalStaff = Number(staffCount[0].count);
     }
 
     res.json({
@@ -143,9 +158,12 @@ router.get('/branch-stats', authenticateToken, authorizeRole('admin'), async (re
       ORDER BY total_customers DESC
     `);
 
+    // Convert BigInt to Number for JSON serialization
+    const cleanedStats = convertBigIntToNumber(branchStats);
+
     res.json({
       success: true,
-      data: branchStats
+      data: cleanedStats
     });
   } catch (error) {
     console.error('Get branch stats error:', error);
@@ -260,9 +278,12 @@ router.get('/customer-trends', authenticateToken, authorizeRole('admin'), async 
       ORDER BY month DESC
     `);
 
+    // Convert BigInt to Number for JSON serialization
+    const cleanedTrends = convertBigIntToNumber(trends);
+
     res.json({
       success: true,
-      data: trends
+      data: cleanedTrends
     });
   } catch (error) {
     console.error('Get customer trends error:', error);
