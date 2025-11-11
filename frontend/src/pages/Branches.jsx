@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Users } from 'lucide-react';
 
 export default function Branches() {
   const { addToast } = useToast();
@@ -149,62 +149,6 @@ export default function Branches() {
         </Button>
       </div>
 
-      {/* Branches Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center h-32">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {branches.map((branch) => (
-            <Card key={branch.branch_id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Building2 className="h-8 w-8 text-primary" />
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(branch)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(branch.branch_id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-                <CardTitle className="mt-2">{branch.branch_name}</CardTitle>
-                <CardDescription>ID: {branch.branch_id}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  {branch.manager_name && (
-                    <p>
-                      <span className="font-medium">Manager:</span> {branch.manager_name}
-                    </p>
-                  )}
-                  {branch.phone_number && (
-                    <p>
-                      <span className="font-medium">Phone:</span> {branch.phone_number}
-                    </p>
-                  )}
-                  {branch.address && (
-                    <p>
-                      <span className="font-medium">Address:</span> {branch.address}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
       {/* Branches Table */}
       <Card>
         <CardHeader>
@@ -224,6 +168,23 @@ export default function Branches() {
                     <TableHead>Manager</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Address</TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Users className="h-4 w-4" />
+                        Karyawan
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        C Active
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        C Inactive
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">Total Customers</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -235,6 +196,24 @@ export default function Branches() {
                       <TableCell>{branch.manager_name || '-'}</TableCell>
                       <TableCell>{branch.phone_number || '-'}</TableCell>
                       <TableCell>{branch.address || '-'}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-blue-100 px-2.5 py-0.5 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                          {branch.total_staff || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
+                          {branch.active_customers || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                          {branch.inactive_customers || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center font-semibold">
+                        {branch.total_customers || 0}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button

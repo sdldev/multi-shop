@@ -1,0 +1,525 @@
+{
+  "info": {
+    "name": "Multi-Shop Branch Management API",
+    "description": "Complete API collection for Multi-Shop Branch Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with username and password. Returns access token and refresh token."
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user information"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate tokens"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Branches",
+      "item": [
+        {
+          "name": "Get All Branches (with Statistics)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches"]
+            },
+            "description": "Get all branches with staff count and customer statistics (total, active, inactive)"
+          }
+        },
+        {
+          "name": "Get Branch by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/branches/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches", "1"]
+            },
+            "description": "Get specific branch details by ID"
+          }
+        },
+        {
+          "name": "Create Branch (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_name\": \"Cabang Jakarta Selatan\",\n  \"address\": \"Jl. TB Simatupang No. 456\",\n  \"phone_number\": \"021-87654321\",\n  \"manager_name\": \"Jane Smith\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches"]
+            },
+            "description": "Create a new branch (Admin only)"
+          }
+        },
+        {
+          "name": "Update Branch (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_name\": \"Cabang Jakarta Selatan - Updated\",\n  \"address\": \"Jl. TB Simatupang No. 456, Ragunan\",\n  \"phone_number\": \"021-87654321\",\n  \"manager_name\": \"Jane Smith\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/branches/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches", "1"]
+            },
+            "description": "Update existing branch (Admin only)"
+          }
+        },
+        {
+          "name": "Delete Branch (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/branches/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches", "1"]
+            },
+            "description": "Delete branch by ID (Admin only). Will check for dependent staff and customers first."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers?branch_id=&status=",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"],
+              "query": [
+                {
+                  "key": "branch_id",
+                  "value": "",
+                  "description": "Filter by branch ID (optional)"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by status: Active or Inactive (optional)"
+                }
+              ]
+            },
+            "description": "Get all customers. Admin sees all, staff sees only their branch."
+          }
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "1"]
+            },
+            "description": "Get specific customer details"
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": 1,\n  \"full_name\": \"Ahmad Rizki\",\n  \"email\": \"ahmad.rizki@example.com\",\n  \"phone_number\": \"08123456789\",\n  \"address\": \"Jl. Mawar No. 12, Jakarta\",\n  \"registration_date\": \"2025-11-11\",\n  \"status\": \"Active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"]
+            },
+            "description": "Create new customer (rate limited: 20 per hour per staff)"
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Ahmad Rizki Updated\",\n  \"phone_number\": \"08198765432\",\n  \"status\": \"Inactive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "1"]
+            },
+            "description": "Update existing customer"
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "1"]
+            },
+            "description": "Delete customer by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "item": [
+        {
+          "name": "Get All Staff (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff"]
+            },
+            "description": "Get all staff members (Admin only)"
+          }
+        },
+        {
+          "name": "Get Staff by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/staff/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "1"]
+            },
+            "description": "Get specific staff details (Admin only)"
+          }
+        },
+        {
+          "name": "Create Staff (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": 1,\n  \"username\": \"staff_jakarta\",\n  \"password\": \"Staff123!\",\n  \"full_name\": \"Budi Santoso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff"]
+            },
+            "description": "Create new staff account (Admin only)"
+          }
+        },
+        {
+          "name": "Update Staff (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Budi Santoso Updated\",\n  \"password\": \"NewPassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/staff/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "1"]
+            },
+            "description": "Update staff details (Admin only)"
+          }
+        },
+        {
+          "name": "Delete Staff (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/staff/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "1"]
+            },
+            "description": "Delete staff by ID (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin)",
+      "item": [
+        {
+          "name": "Get All Admins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Get all admin users (Admin only)"
+          }
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin2\",\n  \"password\": \"SecurePassword123!\",\n  \"full_name\": \"Super Admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Create new admin user (Admin only). Password must have min 8 chars, 1 uppercase, 1 number, 1 special char."
+          }
+        },
+        {
+          "name": "Delete Admin",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Delete admin user (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "stats"]
+            },
+            "description": "Get overall statistics. Admins see all data, staff see only their branch data."
+          }
+        },
+        {
+          "name": "Get Branch Statistics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/branch-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "branch-stats"]
+            },
+            "description": "Get customer and staff count for each branch (Admin only)"
+          }
+        },
+        {
+          "name": "Get Recent Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/recent-customers?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "recent-customers"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of recent customers to retrieve"
+                }
+              ]
+            },
+            "description": "Get recently registered customers. Admins see all, staff see only their branch."
+          }
+        },
+        {
+          "name": "Get Customer Trends (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/customer-trends",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "customer-trends"]
+            },
+            "description": "Get customer registration count by month for the last 12 months (Admin only)"
+          }
+        }
+      ]
+    }
+  ]
+}

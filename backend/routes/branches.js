@@ -5,15 +5,31 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Helper function to convert BigInt to Number for JSON serialization
+const convertBigIntToNumber = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj.map(convertBigIntToNumber);
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [
+        key,
+        typeof value === 'bigint' ? Number(value) : convertBigIntToNumber(value)
+      ])
+    );
+  }
+  return typeof obj === 'bigint' ? Number(obj) : obj;
+};
+
 /**
  * @swagger
  * /api/branches:
  *   get:
- *     summary: Get all branches
+ *     summary: Get all branches with statistics
  *     tags: [Branches]
+ *     description: Retrieve all branches with staff count and customer statistics (active/inactive counts)
  *     responses:
  *       200:
- *         description: List of all branches
+ *         description: List of all branches with staff and customer counts
  *         content:
  *           application/json:
  *             schema:
@@ -21,18 +37,75 @@ const router = express.Router();
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Branch'
+ *                     type: object
+ *                     properties:
+ *                       branch_id:
+ *                         type: integer
+ *                         example: 1
+ *                       branch_name:
+ *                         type: string
+ *                         example: Cabang Jakarta Pusat
+ *                       address:
+ *                         type: string
+ *                         example: Jl. Sudirman No. 123
+ *                       phone_number:
+ *                         type: string
+ *                         example: "021-12345678"
+ *                       manager_name:
+ *                         type: string
+ *                         example: John Doe
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                       total_staff:
+ *                         type: integer
+ *                         description: Total number of staff in this branch
+ *                         example: 5
+ *                       total_customers:
+ *                         type: integer
+ *                         description: Total number of customers in this branch
+ *                         example: 150
+ *                       active_customers:
+ *                         type: integer
+ *                         description: Number of active customers
+ *                         example: 120
+ *                       inactive_customers:
+ *                         type: integer
+ *                         description: Number of inactive customers
+ *                         example: 30
  */
 router.get('/', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
   try {
-    const branches = await query('SELECT * FROM branches ORDER BY branch_id DESC');
+    // Get branches with statistics using LEFT JOIN
+    const branches = await query(`
+      SELECT 
+        b.branch_id,
+        b.branch_name,
+        b.address,
+        b.phone_number,
+        b.manager_name,
+        b.created_at,
+        COUNT(DISTINCT s.staff_id) as total_staff,
+        COUNT(DISTINCT c.customer_id) as total_customers,
+        COUNT(DISTINCT CASE WHEN c.status = 'Active' THEN c.customer_id END) as active_customers,
+        COUNT(DISTINCT CASE WHEN c.status = 'Inactive' THEN c.customer_id END) as inactive_customers
+      FROM branches b
+      LEFT JOIN staff s ON b.branch_id = s.branch_id
+      LEFT JOIN customers c ON b.branch_id = c.branch_id
+      GROUP BY b.branch_id
+      ORDER BY b.branch_id DESC
+    `);
+
+    // Convert BigInt to Number for JSON serialization
+    const cleanedBranches = convertBigIntToNumber(branches);
 
     res.json({
       success: true,
-      data: branches
+      data: cleanedBranches
     });
   } catch (error) {
     console.error('Get branches error:', error);
