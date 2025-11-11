@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { authAPI } from '../utils/api';
 import { Button } from '../components/ui/button';
-import { useToast } from '../components/ui/toast';
+import { useToast } from '../components/ui/use-toast';
 import { 
   LayoutDashboard, 
   Store, 

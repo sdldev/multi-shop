@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { dashboardAPI } from '../utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { useToast } from '../components/ui/toast';
+import { useToast } from '../components/ui/use-toast';
 import { Users, UserCheck, UserX, Building2, UserCog, Shield } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
@@ -18,10 +18,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === 'admin';
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -42,7 +38,7 @@ export default function Dashboard() {
         setBranchStats(branchRes.data.data);
         setTrends(trendsRes.data.data);
       }
-    } catch (error) {
+    } catch {
       addToast({
         title: 'Error',
         description: 'Failed to load dashboard data',
@@ -52,6 +48,11 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (

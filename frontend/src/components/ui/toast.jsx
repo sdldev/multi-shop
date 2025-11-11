@@ -1,6 +1,7 @@
 import * as React from "react"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ToastContext } from "./toast-context"
 
 const Toast = React.forwardRef(({ className, variant = "default", ...props }, ref) => {
   const variants = {
@@ -65,15 +66,6 @@ const ToastProvider = ({ children }) => {
     </ToastContext.Provider>
   )
 }
-
-const ToastContext = React.createContext(undefined)
-
-export const useToast = () => {
-  const context = React.useContext(ToastContext)
-  if (!context) {
-    throw new Error("useToast must be used within ToastProvider")
-  }
-  return context
-}
+ToastProvider.displayName = "ToastProvider"
 
 export { Toast, ToastClose, ToastProvider }

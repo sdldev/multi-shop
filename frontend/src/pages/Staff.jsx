@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { useToast } from '../components/ui/toast';
+import { useToast } from '../components/ui/use-toast';
 import { Plus, Edit, Trash2, UserCog } from 'lucide-react';
 
 export default function Staff() {
@@ -25,6 +25,7 @@ export default function Staff() {
   useEffect(() => {
     fetchStaff();
     fetchBranches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchStaff = async () => {
@@ -32,7 +33,7 @@ export default function Staff() {
     try {
       const response = await staffAPI.getAll();
       setStaff(response.data.data);
-    } catch (error) {
+    } catch {
       addToast({
         title: 'Error',
         description: 'Failed to load staff',
@@ -47,8 +48,8 @@ export default function Staff() {
     try {
       const response = await branchesAPI.getAll();
       setBranches(response.data.data);
-    } catch (error) {
-      console.error('Failed to load branches:', error);
+    } catch {
+      console.error('Failed to load branches');
     }
   };
 

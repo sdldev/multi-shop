@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { useToast } from '../components/ui/toast';
+import { useToast } from '../components/ui/use-toast';
 import { Plus, Edit, Trash2, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -23,6 +23,7 @@ export default function Admins() {
 
   useEffect(() => {
     fetchAdmins();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchAdmins = async () => {
@@ -30,7 +31,7 @@ export default function Admins() {
     try {
       const response = await usersAPI.getAll();
       setAdmins(response.data.data);
-    } catch (error) {
+    } catch {
       addToast({
         title: 'Error',
         description: 'Failed to load admin users',
