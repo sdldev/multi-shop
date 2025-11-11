@@ -4,10 +4,52 @@
 **Sistem Manajemen Cabang** adalah aplikasi web lengkap (full-stack) yang dirancang khusus untuk mengelola operasional cabang bisnis **Toko Multi Cabang**. Aplikasi ini memungkinkan **Admin Global** mengelola seluruh cabang, staf, dan pelanggan, sementara **Staf Cabang** hanya dapat mengakses data cabang tempat mereka bekerja.
 
 Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
-- **Backend**: Node.js + Express + MariaDB
-- **Frontend**: React + Vite + Shadcn UI + Tailwind CSS
+- **Backend**: Node.js + Express + MariaDB + **Swagger API Documentation** ✅
+- **Frontend**: React + Vite + Shadcn UI + Tailwind CSS (Coming Soon)
 - **Autentikasi**: JWT (Access + Refresh Token)
 - **Keamanan**: Rate Limiting, Input Sanitasi, Bcrypt Hash
+
+## 🚀 Quick Start
+
+### Backend API (✅ Complete)
+
+1. **Install Dependencies:**
+   ```bash
+   cd backend
+   npm install
+   ```
+
+2. **Setup Database:**
+   ```bash
+   mysql -u root -p < schema.sql
+   ```
+
+3. **Configure Environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials
+   ```
+
+4. **Seed Database:**
+   ```bash
+   npm run seed
+   ```
+
+5. **Start Server:**
+   ```bash
+   npm run dev
+   ```
+
+6. **Access Swagger Documentation:**
+   ```
+   http://localhost:5000/api-docs
+   ```
+
+**Default Credentials:**
+- Admin: `admin` / `Admin@123`
+- Staff: `staff_jakarta` / `Staff@123`
+
+📖 **Detailed Guide**: [Backend Quick Start](backend/QUICK_START.md)
 
 ---
 
@@ -38,15 +80,16 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 
 ## Teknologi yang Digunakan
 
-### Backend
-- **Node.js** + **Express.js**
-- **MariaDB** (kompatibel MySQL)
-- **Bcrypt** (password hashing)
+### Backend ✅
+- **Node.js 20+** + **Express.js**
+- **MariaDB/MySQL** (database)
+- **Swagger UI** + **Swagger JSDoc** (API documentation)
 - **JWT** (autentikasi)
+- **Bcrypt** (password hashing)
 - **Validator** (sanitasi input)
 - **Express Rate Limit** (anti-brute force)
 
-### Frontend
+### Frontend 🔜
 - **React 18** + **Vite**
 - **Shadcn UI** (komponen UI)
 - **Tailwind CSS** (styling)
@@ -70,12 +113,61 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 
 ---
 
+## 📚 API Endpoints (Backend)
+
+### Authentication
+- `POST /api/auth/login` - Login user (admin/staff)
+- `POST /api/auth/refresh` - Refresh access token
+- `POST /api/auth/logout` - Logout user
+- `GET /api/auth/me` - Get current user info
+
+### Branches (Admin Only)
+- `GET /api/branches` - Get all branches
+- `GET /api/branches/:id` - Get branch by ID
+- `POST /api/branches` - Create new branch
+- `PUT /api/branches/:id` - Update branch
+- `DELETE /api/branches/:id` - Delete branch
+
+### Customers (Admin & Staff)
+- `GET /api/customers` - Get customers (filtered by branch for staff)
+- `GET /api/customers/:id` - Get customer by ID
+- `POST /api/customers` - Create new customer (rate limited: 20/hour)
+- `PUT /api/customers/:id` - Update customer
+- `DELETE /api/customers/:id` - Delete customer
+
+### Staff Management (Admin Only)
+- `GET /api/staff` - Get all staff members
+- `GET /api/staff/:id` - Get staff by ID
+- `POST /api/staff` - Create new staff
+- `PUT /api/staff/:id` - Update staff
+- `DELETE /api/staff/:id` - Delete staff
+
+### Admin Users (Admin Only)
+- `GET /api/users` - Get all admin users
+- `GET /api/users/:id` - Get admin by ID
+- `POST /api/users` - Create new admin (strong password required)
+- `PUT /api/users/:id` - Update admin
+- `DELETE /api/users/:id` - Delete admin
+
+### Dashboard & Analytics
+- `GET /api/dashboard/stats` - Get overall statistics
+- `GET /api/dashboard/branch-stats` - Get per-branch statistics (admin only)
+- `GET /api/dashboard/recent-customers` - Get recent customer registrations
+- `GET /api/dashboard/customer-trends` - Get customer trends by month (admin only)
+
+**📖 Complete API Documentation**: 
+- Swagger UI: `http://localhost:5000/api-docs`
+- [API Documentation](backend/API_DOCUMENTATION.md)
+- [Postman Collection](backend/Multi-Shop-API.postman_collection.json)
+
+---
+
 ## Alur Pengguna
 
-1. **Login** → `/login` → JWT → Dashboard
-2. **Admin** → Kelola semua cabang → Buat staf/admin
-3. **Staf** → Hanya lihat cabang sendiri → Kelola pelanggan
-4. **Logout** → Hapus token → Kembali ke login
+1. **Login** → `/api/auth/login` → JWT Token → Access API
+2. **Admin** → Kelola semua cabang → Buat staf/admin → View analytics
+3. **Staf** → Hanya lihat cabang sendiri → Kelola pelanggan cabang
+4. **Logout** → `/api/auth/logout` → Hapus token
 
 ---
 
