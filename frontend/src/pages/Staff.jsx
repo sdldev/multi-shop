@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
+import validator from 'validator';
 import { staffAPI, branchesAPI } from '../utils/api';
+import { validatePassword } from '../utils/validation';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
-import { Plus, Edit, Trash2, UserCog } from 'lucide-react';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 export default function Staff() {
   const { addToast } = useToast();
@@ -14,7 +17,10 @@ export default function Staff() {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState(null);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [passwordError, setPasswordError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -49,32 +55,54 @@ export default function Staff() {
       const response = await branchesAPI.getAll();
       setBranches(response.data.data);
     } catch {
-      console.error('Failed to load branches');
+      addToast({
+        title: 'Warning',
+        description: 'Failed to load branches list',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setPasswordError('');
+
+    // Validate password if provided
+    if (formData.password) {
+      const validation = validatePassword(formData.password);
+      if (!validation.isValid) {
+        setPasswordError(validation.errors.join('. '));
+        return;
+      }
+    } else if (!editingStaff) {
+      // Password required for new staff
+      setPasswordError('Password is required for new staff members');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = {
-        ...formData,
+      // Sanitize input data
+      const sanitizedData = {
+        username: validator.escape(formData.username.trim()),
+        full_name: validator.escape(formData.full_name.trim()),
         branch_id: parseInt(formData.branch_id),
       };
 
+      if (formData.password) {
+        sanitizedData.password = formData.password; // Don't escape passwords
+      }
+
       if (editingStaff) {
-        if (!data.password) {
-          delete data.password;
-        }
-        await staffAPI.update(editingStaff.staff_id, data);
+        await staffAPI.update(editingStaff.staff_id, sanitizedData);
         addToast({
           title: 'Success',
           description: 'Staff member updated successfully',
           variant: 'success',
         });
       } else {
-        await staffAPI.create(data);
+        await staffAPI.create(sanitizedData);
         addToast({
           title: 'Success',
           description: 'Staff member created successfully',
@@ -99,6 +127,7 @@ export default function Staff() {
 
   const handleEdit = (staffMember) => {
     setEditingStaff(staffMember);
+    setPasswordError('');
     setFormData({
       username: staffMember.username,
       password: '',
@@ -108,13 +137,14 @@ export default function Staff() {
     setShowModal(true);
   };
 
-  const handleDelete = async (staffId) => {
-    if (!window.confirm('Are you sure you want to delete this staff member?')) {
-      return;
-    }
+  const handleDeleteClick = (staffId) => {
+    setStaffToDelete(staffId);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
     try {
-      await staffAPI.delete(staffId);
+      await staffAPI.delete(staffToDelete);
       addToast({
         title: 'Success',
         description: 'Staff member deleted successfully',
@@ -127,10 +157,14 @@ export default function Staff() {
         description: error.response?.data?.message || 'Failed to delete staff member',
         variant: 'destructive',
       });
+    } finally {
+      setShowDeleteDialog(false);
+      setStaffToDelete(null);
     }
   };
 
   const resetForm = () => {
+    setPasswordError('');
     setFormData({
       username: '',
       password: '',
@@ -196,7 +230,7 @@ export default function Staff() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(staffMember.staff_id)}
+                            onClick={() => handleDeleteClick(staffMember.staff_id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -241,11 +275,17 @@ export default function Staff() {
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      setPasswordError('');
+                    }}
                     required={!editingStaff}
                     placeholder={editingStaff ? 'Leave empty to keep current' : 'Enter password'}
                   />
-                  {!editingStaff && (
+                  {passwordError && (
+                    <p className="text-xs text-destructive">{passwordError}</p>
+                  )}
+                  {!passwordError && (
                     <p className="text-xs text-muted-foreground">
                       Min 8 characters, 1 uppercase, 1 number, 1 special character
                     </p>
@@ -298,6 +338,15 @@ export default function Staff() {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Staff Member"
+        description="Are you sure you want to delete this staff member? This action cannot be undone."
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

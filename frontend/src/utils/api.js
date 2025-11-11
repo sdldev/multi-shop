@@ -34,6 +34,7 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token');
         }
 
+        // Use axios directly to avoid triggering the interceptor again
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refreshToken,
         });

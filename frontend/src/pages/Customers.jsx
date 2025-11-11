@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import validator from 'validator';
 import { customersAPI, branchesAPI } from '../utils/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -7,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -17,6 +19,8 @@ export default function Customers() {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
@@ -60,7 +64,11 @@ export default function Customers() {
       const response = await branchesAPI.getAll();
       setBranches(response.data.data);
     } catch {
-      console.error('Failed to load branches');
+      addToast({
+        title: 'Warning',
+        description: 'Failed to load branches list',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -69,23 +77,29 @@ export default function Customers() {
     setLoading(true);
 
     try {
-      const data = {
-        ...formData,
+      // Sanitize input data
+      const sanitizedData = {
+        full_name: validator.escape(formData.full_name.trim()),
+        email: validator.normalizeEmail(formData.email.trim()),
+        phone_number: formData.phone_number ? validator.escape(formData.phone_number.trim()) : '',
+        address: formData.address ? validator.escape(formData.address.trim()) : '',
         branch_id: isAdmin ? parseInt(formData.branch_id) : user.branch_id,
+        status: formData.status,
+        registration_date: formData.registration_date,
       };
 
       if (editingCustomer) {
-        await customersAPI.update(editingCustomer.customer_id, data);
+        await customersAPI.update(editingCustomer.customer_id, sanitizedData);
         addToast({
           title: 'Success',
           description: 'Customer updated successfully',
           variant: 'success',
         });
       } else {
-        await customersAPI.create(data);
+        await customersAPI.create(sanitizedData);
         addToast({
           title: 'Success',
-          description: 'Customer created successfully',
+          description: 'Customer created successfully. Note: Rate limit is 20 customers/hour.',
           variant: 'success',
         });
       }
@@ -119,13 +133,14 @@ export default function Customers() {
     setShowModal(true);
   };
 
-  const handleDelete = async (customerId) => {
-    if (!window.confirm('Are you sure you want to delete this customer?')) {
-      return;
-    }
+  const handleDeleteClick = (customerId) => {
+    setCustomerToDelete(customerId);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
     try {
-      await customersAPI.delete(customerId);
+      await customersAPI.delete(customerToDelete);
       addToast({
         title: 'Success',
         description: 'Customer deleted successfully',
@@ -138,6 +153,9 @@ export default function Customers() {
         description: error.response?.data?.message || 'Failed to delete customer',
         variant: 'destructive',
       });
+    } finally {
+      setShowDeleteDialog(false);
+      setCustomerToDelete(null);
     }
   };
 
@@ -243,7 +261,7 @@ export default function Customers() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(customer.customer_id)}
+                            onClick={() => handleDeleteClick(customer.customer_id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -342,6 +360,7 @@ export default function Customers() {
                   <Input
                     id="registration_date"
                     type="date"
+                    max={new Date().toISOString().split('T')[0]}
                     value={formData.registration_date}
                     onChange={(e) => setFormData({ ...formData, registration_date: e.target.value })}
                     required
@@ -368,6 +387,15 @@ export default function Customers() {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Customer"
+        description="Are you sure you want to delete this customer? This action cannot be undone."
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -26,14 +26,20 @@ export default function Layout() {
   const handleLogout = async () => {
     try {
       await authAPI.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
       dispatch(logout());
       addToast({
         title: 'Logged out',
         description: 'You have been successfully logged out.',
         variant: 'default',
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      dispatch(logout());
+      addToast({
+        title: 'Logged out locally',
+        description: 'You have been logged out locally. Server session may still be active.',
+        variant: 'destructive',
       });
       navigate('/login');
     }

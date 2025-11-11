@@ -1,5 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+/**
+ * SECURITY NOTE: This implementation uses localStorage for JWT token storage.
+ * For production environments, consider implementing httpOnly cookies on the backend
+ * to better protect against XSS attacks. Current implementation requires:
+ * 1. Strict Content Security Policy (CSP) headers
+ * 2. Regular security audits
+ * 3. XSS prevention measures across the application
+ */
+
 const initialState = {
   user: JSON.parse(localStorage.getItem('user')) || null,
   accessToken: localStorage.getItem('accessToken') || null,
@@ -18,6 +27,7 @@ const authSlice = createSlice({
       state.refreshToken = refreshToken;
       state.isAuthenticated = true;
 
+      // Store tokens in localStorage (see security note above)
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);

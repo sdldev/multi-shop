@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import validator from 'validator';
 import { branchesAPI } from '../utils/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -6,6 +7,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
 
 export default function Branches() {
@@ -13,6 +15,8 @@ export default function Branches() {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [branchToDelete, setBranchToDelete] = useState(null);
   const [editingBranch, setEditingBranch] = useState(null);
   const [formData, setFormData] = useState({
     branch_name: '',
@@ -47,15 +51,23 @@ export default function Branches() {
     setLoading(true);
 
     try {
+      // Sanitize input data
+      const sanitizedData = {
+        branch_name: validator.escape(formData.branch_name.trim()),
+        address: formData.address ? validator.escape(formData.address.trim()) : '',
+        phone_number: formData.phone_number ? validator.escape(formData.phone_number.trim()) : '',
+        manager_name: formData.manager_name ? validator.escape(formData.manager_name.trim()) : '',
+      };
+
       if (editingBranch) {
-        await branchesAPI.update(editingBranch.branch_id, formData);
+        await branchesAPI.update(editingBranch.branch_id, sanitizedData);
         addToast({
           title: 'Success',
           description: 'Branch updated successfully',
           variant: 'success',
         });
       } else {
-        await branchesAPI.create(formData);
+        await branchesAPI.create(sanitizedData);
         addToast({
           title: 'Success',
           description: 'Branch created successfully',
@@ -89,13 +101,14 @@ export default function Branches() {
     setShowModal(true);
   };
 
-  const handleDelete = async (branchId) => {
-    if (!window.confirm('Are you sure you want to delete this branch? This action cannot be undone.')) {
-      return;
-    }
+  const handleDeleteClick = (branchId) => {
+    setBranchToDelete(branchId);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
     try {
-      await branchesAPI.delete(branchId);
+      await branchesAPI.delete(branchToDelete);
       addToast({
         title: 'Success',
         description: 'Branch deleted successfully',
@@ -108,6 +121,9 @@ export default function Branches() {
         description: error.response?.data?.message || 'Failed to delete branch',
         variant: 'destructive',
       });
+    } finally {
+      setShowDeleteDialog(false);
+      setBranchToDelete(null);
     }
   };
 
@@ -156,7 +172,7 @@ export default function Branches() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(branch.branch_id)}
+                      onClick={() => handleDeleteClick(branch.branch_id)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -231,7 +247,7 @@ export default function Branches() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(branch.branch_id)}
+                            onClick={() => handleDeleteClick(branch.branch_id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -312,6 +328,15 @@ export default function Branches() {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Branch"
+        description="Are you sure you want to delete this branch? This action cannot be undone and will affect all associated staff and customers."
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

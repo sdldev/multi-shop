@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
+import validator from 'validator';
 import { usersAPI } from '../utils/api';
+import { validatePassword } from '../utils/validation';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { Plus, Edit, Trash2, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -14,7 +17,10 @@ export default function Admins() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState(null);
   const [editingAdmin, setEditingAdmin] = useState(null);
+  const [passwordError, setPasswordError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -44,22 +50,43 @@ export default function Admins() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setPasswordError('');
+
+    // Validate password if provided
+    if (formData.password) {
+      const validation = validatePassword(formData.password);
+      if (!validation.isValid) {
+        setPasswordError(validation.errors.join('. '));
+        return;
+      }
+    } else if (!editingAdmin) {
+      // Password required for new admins
+      setPasswordError('Password is required for new admin users');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Sanitize input data
+      const sanitizedData = {
+        username: validator.escape(formData.username.trim()),
+        full_name: validator.escape(formData.full_name.trim()),
+      };
+
+      if (formData.password) {
+        sanitizedData.password = formData.password; // Don't escape passwords
+      }
+
       if (editingAdmin) {
-        const data = { ...formData };
-        if (!data.password) {
-          delete data.password;
-        }
-        await usersAPI.update(editingAdmin.user_id, data);
+        await usersAPI.update(editingAdmin.user_id, sanitizedData);
         addToast({
           title: 'Success',
           description: 'Admin user updated successfully',
           variant: 'success',
         });
       } else {
-        await usersAPI.create(formData);
+        await usersAPI.create(sanitizedData);
         addToast({
           title: 'Success',
           description: 'Admin user created successfully',
@@ -84,6 +111,7 @@ export default function Admins() {
 
   const handleEdit = (admin) => {
     setEditingAdmin(admin);
+    setPasswordError('');
     setFormData({
       username: admin.username,
       password: '',
@@ -92,13 +120,14 @@ export default function Admins() {
     setShowModal(true);
   };
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this admin user? This action cannot be undone.')) {
-      return;
-    }
+  const handleDeleteClick = (userId) => {
+    setAdminToDelete(userId);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
     try {
-      await usersAPI.delete(userId);
+      await usersAPI.delete(adminToDelete);
       addToast({
         title: 'Success',
         description: 'Admin user deleted successfully',
@@ -111,10 +140,14 @@ export default function Admins() {
         description: error.response?.data?.message || 'Failed to delete admin user',
         variant: 'destructive',
       });
+    } finally {
+      setShowDeleteDialog(false);
+      setAdminToDelete(null);
     }
   };
 
   const resetForm = () => {
+    setPasswordError('');
     setFormData({
       username: '',
       password: '',
@@ -190,7 +223,7 @@ export default function Admins() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(admin.user_id)}
+                            onClick={() => handleDeleteClick(admin.user_id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -235,11 +268,17 @@ export default function Admins() {
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      setPasswordError('');
+                    }}
                     required={!editingAdmin}
                     placeholder={editingAdmin ? 'Leave empty to keep current' : 'Enter password'}
                   />
-                  {!editingAdmin && (
+                  {passwordError && (
+                    <p className="text-xs text-destructive">{passwordError}</p>
+                  )}
+                  {!passwordError && (
                     <p className="text-xs text-muted-foreground">
                       Min 8 characters, 1 uppercase, 1 number, 1 special character
                     </p>
@@ -275,6 +314,15 @@ export default function Admins() {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Admin User"
+        description="Are you sure you want to delete this admin user? This action cannot be undone."
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
