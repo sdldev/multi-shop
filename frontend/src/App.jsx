@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Branches from './pages/Branches';
 import Customers from './pages/Customers';
 import Staff from './pages/Staff';
+import StaffMobile from './pages/StaffMobile';
 import Admins from './pages/Admins';
 
 function App() {
@@ -42,6 +43,14 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <Staff />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="staff-mobile"
+                element={
+                  <ProtectedRoute>
+                    <StaffMobile />
                   </ProtectedRoute>
                 }
               />
