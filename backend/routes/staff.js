@@ -36,7 +36,7 @@ const router = express.Router();
 router.get('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
     const { branch_id } = req.query;
-    let sql = 'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE 1=1';
+    let sql = 'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.code, s.address, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE 1=1';
     const params = [];
 
     if (branch_id) {
@@ -99,7 +99,7 @@ router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
     const { id } = req.params;
 
     const staff = await query(
-      'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE s.staff_id = ?',
+      'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.code, s.address, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE s.staff_id = ?',
       [id]
     );
 
@@ -151,6 +151,10 @@ router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  *                 format: password
  *               full_name:
  *                 type: string
+ *               code:
+ *                 type: string
+ *               address:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Staff created successfully
@@ -174,7 +178,7 @@ router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  */
 router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    const { branch_id, username, password, full_name } = req.body;
+    const { branch_id, username, password, full_name, code, address } = req.body;
 
     if (!branch_id || !username || !password || !full_name) {
       return res.status(400).json({
@@ -216,16 +220,18 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
       branch_id: parseInt(branch_id),
       username: cleanUsername,
       password_hash: passwordHash,
-      full_name: validator.escape(full_name.trim())
+      full_name: validator.escape(full_name.trim()),
+      code: code ? validator.escape(code.trim()) : null,
+      address: address ? validator.escape(address.trim()) : null
     };
 
     const result = await query(
-      'INSERT INTO staff (branch_id, username, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)',
-      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, 'staff']
+      'INSERT INTO staff (branch_id, username, password_hash, full_name, code, address, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.code, sanitizedData.address, 'staff']
     );
 
     const newStaff = await query(
-      'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE s.staff_id = ?',
+      'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.code, s.address, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE s.staff_id = ?',
       [result.insertId]
     );
 
@@ -273,6 +279,10 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
  *                 format: password
  *               full_name:
  *                 type: string
+ *               code:
+ *                 type: string
+ *               address:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Staff updated successfully
@@ -297,7 +307,7 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
 router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { branch_id, username, password, full_name } = req.body;
+    const { branch_id, username, password, full_name, code, address } = req.body;
 
     const existingStaff = await query('SELECT * FROM staff WHERE staff_id = ?', [id]);
 
@@ -331,6 +341,8 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
       branch_id: branch_id ? parseInt(branch_id) : existingStaff[0].branch_id,
       username: cleanUsername,
       full_name: full_name ? validator.escape(full_name.trim()) : existingStaff[0].full_name,
+      code: code !== undefined ? (code ? validator.escape(code.trim()) : null) : existingStaff[0].code,
+      address: address !== undefined ? (address ? validator.escape(address.trim()) : null) : existingStaff[0].address,
       password_hash: existingStaff[0].password_hash
     };
 
@@ -351,12 +363,12 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
     }
 
     await query(
-      'UPDATE staff SET branch_id = ?, username = ?, password_hash = ?, full_name = ? WHERE staff_id = ?',
-      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, id]
+      'UPDATE staff SET branch_id = ?, username = ?, password_hash = ?, full_name = ?, code = ?, address = ? WHERE staff_id = ?',
+      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.code, sanitizedData.address, id]
     );
 
     const updatedStaff = await query(
-      'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE s.staff_id = ?',
+      'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.code, s.address, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE s.staff_id = ?',
       [id]
     );
 

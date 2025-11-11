@@ -25,6 +25,8 @@ export default function Staff() {
     username: '',
     password: '',
     full_name: '',
+    code: '',
+    address: '',
     branch_id: '',
   });
 
@@ -87,6 +89,8 @@ export default function Staff() {
       const sanitizedData = {
         username: validator.escape(formData.username.trim()),
         full_name: validator.escape(formData.full_name.trim()),
+        code: formData.code ? validator.escape(formData.code.trim()) : '',
+        address: formData.address ? validator.escape(formData.address.trim()) : '',
         branch_id: parseInt(formData.branch_id),
       };
 
@@ -132,6 +136,8 @@ export default function Staff() {
       username: staffMember.username,
       password: '',
       full_name: staffMember.full_name,
+      code: staffMember.code || '',
+      address: staffMember.address || '',
       branch_id: staffMember.branch_id.toString(),
     });
     setShowModal(true);
@@ -169,6 +175,8 @@ export default function Staff() {
       username: '',
       password: '',
       full_name: '',
+      code: '',
+      address: '',
       branch_id: '',
     });
   };
@@ -207,6 +215,7 @@ export default function Staff() {
                     <TableHead>ID</TableHead>
                     <TableHead>Username</TableHead>
                     <TableHead>Full Name</TableHead>
+                    <TableHead>Code</TableHead>
                     <TableHead>Branch</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -217,6 +226,7 @@ export default function Staff() {
                       <TableCell>{staffMember.staff_id}</TableCell>
                       <TableCell className="font-medium">{staffMember.username}</TableCell>
                       <TableCell>{staffMember.full_name}</TableCell>
+                      <TableCell>{staffMember.code || '-'}</TableCell>
                       <TableCell>{staffMember.branch_name}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -298,6 +308,23 @@ export default function Staff() {
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="code">Code</Label>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="e.g., STF-JKT-001"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
