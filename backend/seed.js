@@ -58,28 +58,6 @@ async function seedDatabase() {
       console.log(`   ✓ Created staff: ${staff.username} (password: Staff@123)`);
     }
 
-    console.log('👨‍👩‍👧‍👦 Seeding customers...');
-    
-    const today = new Date();
-    const formatDate = (daysAgo) => {
-      const date = new Date(today);
-      date.setDate(date.getDate() - daysAgo);
-      return date.toISOString().split('T')[0];
-    };
-
-    const customers = [
-      { branch_id: branchIds[0], name: 'John Doe', email: 'john.doe@example.com', phone: '+62 812 3456789', code: 'CUST-JKT-001', address: 'Jl. Kebon Jeruk No. 1', daysAgo: 90, status: 'Active' },
-      { branch_id: branchIds[0], name: 'Jane Smith', email: 'jane.smith@example.com', phone: '+62 813 9876543', code: 'CUST-JKT-002', address: 'Jl. Meruya No. 23', daysAgo: 85, status: 'Active' },
-    ];
-
-    for (const customer of customers) {
-      await query(
-        'INSERT INTO customers (branch_id, full_name, email, phone_number, code, address, registration_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [customer.branch_id, customer.name, customer.email, customer.phone, customer.code, customer.address, formatDate(customer.daysAgo), customer.status]
-      );
-    }
-    console.log(`   ✓ Created ${customers.length} customers across all branches`);
-
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📝 Login credentials:');
     console.log('   Super Admin: superadmin / CustPSW11!!');
