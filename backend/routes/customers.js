@@ -10,7 +10,7 @@ const router = express.Router();
  * @swagger
  * /api/customers:
  *   get:
- *     summary: Get all customers (filtered by branch for staff)
+ *     summary: Get all customers with search and pagination (filtered by branch for staff)
  *     tags: [Customers]
  *     parameters:
  *       - in: query
@@ -24,9 +24,26 @@ const router = express.Router();
  *           type: string
  *           enum: [Active, Inactive]
  *         description: Filter by customer status
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by full_name, phone_number, code, or address (min 3 characters)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page (max 100)
  *     responses:
  *       200:
- *         description: List of customers
+ *         description: List of customers with pagination
  *         content:
  *           application/json:
  *             schema:
@@ -38,33 +55,84 @@ const router = express.Router();
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Customer'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
  */
 router.get('/', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
   try {
-    const { branch_id, status } = req.query;
+    const { branch_id, status, search } = req.query;
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    
+    // Limit max items per page to prevent abuse
+    if (limit > 100) limit = 100;
+    if (page < 1) page = 1;
+    
+    const offset = (page - 1) * limit;
+    
     let sql = 'SELECT c.*, b.branch_name FROM customers c LEFT JOIN branches b ON c.branch_id = b.branch_id WHERE 1=1';
+    let countSql = 'SELECT COUNT(*) as total FROM customers c WHERE 1=1';
     const params = [];
+    const countParams = [];
 
+    // Branch filter (RBAC)
     if (req.user.role === 'staff') {
       sql += ' AND c.branch_id = ?';
+      countSql += ' AND c.branch_id = ?';
       params.push(req.user.branch_id);
+      countParams.push(req.user.branch_id);
     } else if (branch_id) {
       sql += ' AND c.branch_id = ?';
+      countSql += ' AND c.branch_id = ?';
       params.push(branch_id);
+      countParams.push(branch_id);
     }
 
+    // Status filter
     if (status) {
       sql += ' AND c.status = ?';
+      countSql += ' AND c.status = ?';
       params.push(status);
+      countParams.push(status);
     }
 
-    sql += ' ORDER BY c.customer_id DESC';
+    // Search filter (min 3 characters for efficiency)
+    if (search && search.trim().length >= 3) {
+      const searchTerm = `%${search.trim()}%`;
+      sql += ' AND (c.full_name LIKE ? OR c.phone_number LIKE ? OR c.code LIKE ? OR c.address LIKE ? OR c.email LIKE ?)';
+      countSql += ' AND (c.full_name LIKE ? OR c.phone_number LIKE ? OR c.code LIKE ? OR c.address LIKE ? OR c.email LIKE ?)';
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Get total count for pagination
+    const countResult = await query(countSql, countParams);
+    const total = Number(countResult[0].total); // Convert BigInt to Number
+
+    // Add sorting and pagination
+    sql += ' ORDER BY c.customer_id DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
 
     const customers = await query(sql, params);
 
     res.json({
       success: true,
-      data: customers
+      data: customers,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     console.error('Get customers error:', error);
