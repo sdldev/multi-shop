@@ -60,14 +60,14 @@ router.post('/login', loginRateLimiter, async (req, res) => {
     let user = null;
     let userType = null;
 
-    const adminResult = await query(
+    const userResult = await query(
       'SELECT user_id as id, username, password_hash, full_name, role FROM users WHERE username = ?',
       [cleanUsername]
     );
 
-    if (adminResult.length > 0) {
-      user = adminResult[0];
-      userType = 'admin';
+    if (userResult.length > 0) {
+      user = userResult[0];
+      userType = 'user';
     } else {
       const staffResult = await query(
         'SELECT staff_id as id, branch_id, username, password_hash, full_name, role FROM staff WHERE username = ?',

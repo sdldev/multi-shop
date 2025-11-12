@@ -1,6 +1,6 @@
 import express from 'express';
 import { query } from '../config/db.js';
-import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { authenticateToken, authorizeRole, USER_ROLES } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -139,7 +139,7 @@ router.get('/stats', authenticateToken, authorizeRole('admin', 'staff'), async (
  *                       total_staff:
  *                         type: integer
  */
-router.get('/branch-stats', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/branch-stats', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const branchStats = await query(`
       SELECT 
@@ -266,7 +266,7 @@ router.get('/recent-customers', authenticateToken, authorizeRole('admin', 'staff
  *                       count:
  *                         type: integer
  */
-router.get('/customer-trends', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/customer-trends', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const trends = await query(`
       SELECT 
