@@ -1,0 +1,321 @@
+import { useEffect, useState } from 'react';
+import validator from 'validator';
+import { branchesAPI } from '../utils/api';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { useToast } from '../components/ui/use-toast';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { Plus, Edit, Trash2, Users } from 'lucide-react';
+
+export default function Branches() {
+  const { addToast } = useToast();
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [branchToDelete, setBranchToDelete] = useState(null);
+  const [editingBranch, setEditingBranch] = useState(null);
+  const [formData, setFormData] = useState({
+    branch_name: '',
+    address: '',
+    phone_number: '',
+    manager_name: '',
+  });
+
+  useEffect(() => {
+    fetchBranches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchBranches = async () => {
+    setLoading(true);
+    try {
+      const response = await branchesAPI.getAll();
+      setBranches(response.data.data);
+    } catch {
+      addToast({
+        title: 'Error',
+        description: 'Failed to load branches',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Sanitize input data
+      const sanitizedData = {
+        branch_name: validator.escape(formData.branch_name.trim()),
+        address: formData.address ? validator.escape(formData.address.trim()) : '',
+        phone_number: formData.phone_number ? validator.escape(formData.phone_number.trim()) : '',
+        manager_name: formData.manager_name ? validator.escape(formData.manager_name.trim()) : '',
+      };
+
+      if (editingBranch) {
+        await branchesAPI.update(editingBranch.branch_id, sanitizedData);
+        addToast({
+          title: 'Success',
+          description: 'Branch updated successfully',
+          variant: 'success',
+        });
+      } else {
+        await branchesAPI.create(sanitizedData);
+        addToast({
+          title: 'Success',
+          description: 'Branch created successfully',
+          variant: 'success',
+        });
+      }
+
+      setShowModal(false);
+      setEditingBranch(null);
+      resetForm();
+      fetchBranches();
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to save branch',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (branch) => {
+    setEditingBranch(branch);
+    setFormData({
+      branch_name: branch.branch_name,
+      address: branch.address || '',
+      phone_number: branch.phone_number || '',
+      manager_name: branch.manager_name || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = (branchId) => {
+    setBranchToDelete(branchId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await branchesAPI.delete(branchToDelete);
+      addToast({
+        title: 'Success',
+        description: 'Branch deleted successfully',
+        variant: 'success',
+      });
+      fetchBranches();
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to delete branch',
+        variant: 'destructive',
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setBranchToDelete(null);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      branch_name: '',
+      address: '',
+      phone_number: '',
+      manager_name: '',
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Branches</h1>
+          <p className="text-muted-foreground">Manage branch locations</p>
+        </div>
+        <Button onClick={() => setShowModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Branch
+        </Button>
+      </div>
+
+      {/* Branches Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Branch List</CardTitle>
+          <CardDescription>{branches.length} branch{branches.length !== 1 ? 'es' : ''} found</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {branches.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No branches found</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Branch Name</TableHead>
+                    <TableHead>Manager</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Users className="h-4 w-4" />
+                        Karyawan
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        C Active
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        C Inactive
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">Total Customers</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {branches.map((branch) => (
+                    <TableRow key={branch.branch_id}>
+                      <TableCell>{branch.branch_id}</TableCell>
+                      <TableCell className="font-medium">{branch.branch_name}</TableCell>
+                      <TableCell>{branch.manager_name || '-'}</TableCell>
+                      <TableCell>{branch.phone_number || '-'}</TableCell>
+                      <TableCell>{branch.address || '-'}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-blue-100 px-2.5 py-0.5 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                          {branch.total_staff || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
+                          {branch.active_customers || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                          {branch.inactive_customers || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center font-semibold">
+                        {branch.total_customers || 0}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(branch)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(branch.branch_id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Branch Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle>{editingBranch ? 'Edit Branch' : 'Add Branch'}</CardTitle>
+              <CardDescription>
+                {editingBranch ? 'Update branch information' : 'Create a new branch'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="branch_name">Branch Name *</Label>
+                  <Input
+                    id="branch_name"
+                    value={formData.branch_name}
+                    onChange={(e) => setFormData({ ...formData, branch_name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manager_name">Manager Name</Label>
+                  <Input
+                    id="manager_name"
+                    value={formData.manager_name}
+                    onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Input
+                    id="phone_number"
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowModal(false);
+                      setEditingBranch(null);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Saving...' : editingBranch ? 'Update' : 'Create'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Branch"
+        description="Are you sure you want to delete this branch? This action cannot be undone and will affect all associated staff and customers."
+        onConfirm={confirmDelete}
+      />
+    </div>
+  );
+}
