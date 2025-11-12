@@ -19,7 +19,12 @@ const PORT = process.env.PORT || 5000;
 
 // CORS configuration - must be before other middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    'http://localhost:3000',  // main-frontend
+    'http://localhost:3001',  // branch-frontend
+    'http://localhost:5173',  // legacy frontend
+    process.env.FRONTEND_URL || 'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
