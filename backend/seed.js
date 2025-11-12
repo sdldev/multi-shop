@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { query, getConnection } from './config/db.js';
 import dotenv from 'dotenv';
 
@@ -32,11 +33,39 @@ async function seedDatabase() {
     const adminPassword = await bcrypt.hash('CustPSW11!!', 10);
     
     // Create Owner
-    await query(
+    const ownerResult = await query(
       'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
       ['owner', adminPassword, 'System Owner', 'Owner']
     );
+    const ownerId = ownerResult.insertId;
     console.log('   ✓ Created user: owner (Role: Owner, password: CustPSW11!!)');
+
+    // Generate API key for Owner (for testing/integration)
+    console.log('\n🔑 Generating API key for Owner...');
+    const env = process.env.NODE_ENV === 'production' ? 'live' : 'test';
+    const apiKeyPlain = `sk_${env}_${crypto.randomBytes(32).toString('hex')}`;
+    const keyHash = crypto.createHash('sha256').update(apiKeyPlain).digest('hex');
+    
+    const scopes = JSON.stringify([
+      'read:customers',
+      'write:customers',
+      'read:branches',
+      'write:branches',
+      'read:staff',
+      'write:staff',
+      'read:dashboard',
+      'admin:*'
+    ]);
+
+    await query(
+      'INSERT INTO api_keys (user_id, key_hash, name, scopes) VALUES (?, ?, ?, ?)',
+      [ownerId, keyHash, 'Owner Default API Key', scopes]
+    );
+    
+    console.log('\n⚠️  IMPORTANT: Save this API key securely! It will NOT be shown again:');
+    console.log(`   ${apiKeyPlain}`);
+    console.log('\n   Add this to your .env file:');
+    console.log(`   API_KEY=${apiKeyPlain}\n`);
 
     // Create Manager
     await query(
@@ -74,6 +103,7 @@ async function seedDatabase() {
       { branch_id: branchIds[0], username: 'cashier_bth', full_name: 'Kasir BTH', code: 'STF-BTH-003', address: 'Jl. Cibaduyut No. 20, Batanghari', role: 'Cashier' },
       { branch_id: branchIds[1], username: 'headbranch_sbr', full_name: 'Kepala Cabang SBR', code: 'STF-SBR-001', address: 'Jl. Dago No. 25, Simbaringin', role: 'HeadBranch' },
       { branch_id: branchIds[1], username: 'headcounter_sbr', full_name: 'Kepala Counter SBR', code: 'STF-SBR-002', address: 'Jl. Braga No. 30, Simbaringin', role: 'HeadCounter' },
+      { branch_id: branchIds[2], username: 'headbranch_psw', full_name: 'Kepala Cabang PSW', code: 'STF-PSW-001', address: 'Jl. Kemanggisan No. 10, Pringsewu', role: 'HeadBranch' },
       { branch_id: branchIds[2], username: 'staff_psw', full_name: 'Staff PSW', code: 'STF-PSW-001', address: 'Jl. Basuki No. 40, Pringsewu', role: 'Staff' },
     ];
 
@@ -100,7 +130,11 @@ async function seedDatabase() {
     console.log('     - headbranch_sbr (HeadBranch - SBR)');
     console.log('     - headcounter_sbr (HeadCounter - SBR)');
     console.log('     - staff_psw (Staff - PSW)');
-    console.log('\n🚀 You can now start the server with: npm run dev');
+    console.log('\n� Security Reminder:');
+    console.log('   - API key shown above is for TESTING only');
+    console.log('   - Generate new production API keys after deployment');
+    console.log('   - Never commit API keys to version control');
+    console.log('\n�🚀 You can now start the server with: npm run dev');
 
   } catch (error) {
     console.error('❌ Seeding error:', error);

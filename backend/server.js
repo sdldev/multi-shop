@@ -11,6 +11,7 @@ import customerRoutes from './routes/customers.js';
 import staffRoutes from './routes/staff.js';
 import userRoutes from './routes/users.js';
 import dashboardRoutes from './routes/dashboard.js';
+import apiKeyRoutes from './routes/apiKeys.js';
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
 }));
 
 app.use(express.json());
@@ -81,6 +82,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/api-keys', apiKeyRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
