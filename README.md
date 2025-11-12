@@ -5,9 +5,26 @@
 
 Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 - **Backend**: Node.js + Express + MariaDB + **Swagger API Documentation** ✅
-- **Frontend**: React + Vite + Shadcn UI + Tailwind CSS ✅
+- **Main Frontend (Desktop)**: React + Vite + Shadcn UI + Tailwind CSS - For Admin/Management ✅
+- **Branch Frontend (Mobile)**: React + Vite + Mobile-First UI - For Branch Staff ✅
 - **Autentikasi**: JWT (Access + Refresh Token)
 - **Keamanan**: Rate Limiting, Input Sanitasi, Bcrypt Hash
+
+## Arsitektur Aplikasi
+
+Aplikasi ini memiliki **2 frontend terpisah** yang melayani kebutuhan berbeda:
+
+### 1. Main Frontend (Desktop) - Port 3000
+- **Target**: Admin & Management users
+- **Interface**: Desktop-optimized with sidebar navigation
+- **Features**: Full system management (branches, staff, admins, customers)
+- **Access**: All branches and system-wide features
+
+### 2. Branch Frontend (Mobile) - Port 3001
+- **Target**: Branch staff (HeadBranch, Admin, Cashier, Staff)
+- **Interface**: Mobile-first with bottom navigation
+- **Features**: Customer management within assigned branch
+- **Access**: Limited to own branch only
 
 ## 🚀 Quick Start
 
@@ -47,11 +64,13 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 
 📖 **Detailed Guide**: [Backend Quick Start](backend/QUICK_START.md)
 
-### Frontend (✅ Complete)
+### Main Frontend - Desktop (✅ Complete)
+
+**For Admin/Management Users**
 
 1. **Install Dependencies:**
    ```bash
-   cd frontend
+   cd main-frontend
    npm install
    ```
 
@@ -71,17 +90,43 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
    http://localhost:3000
    ```
 
-5. **Build for Production:**
+**Default Credentials:**
+- Admin: `admin` / `Admin@123`
+- Owner: `owner` / `CustPSW11!!`
+
+📖 **Detailed Guide**: [Main Frontend README](main-frontend/README.md)
+
+### Branch Frontend - Mobile (✅ Complete)
+
+**For Branch Staff**
+
+1. **Install Dependencies:**
    ```bash
-   npm run build
-   npm run preview
+   cd branch-frontend
+   npm install
+   ```
+
+2. **Configure Environment:**
+   ```bash
+   cp .env.example .env
+   # Update VITE_API_BASE_URL if needed (default: http://localhost:5000/api)
+   ```
+
+3. **Start Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Access Application:**
+   ```
+   http://localhost:3001
    ```
 
 **Default Credentials:**
-- Admin: `admin` / `Admin@123`
 - Staff: `staff_jakarta` / `Staff@123`
+- Staff BTH: `admin_bth` / `Staff@123`
 
-📖 **Detailed Guide**: [Frontend README](frontend/README.md)
+📖 **Detailed Guide**: [Branch Frontend README](branch-frontend/README.md)
 
 ---
 

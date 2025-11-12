@@ -143,8 +143,22 @@ backend/.env
 backend/node_modules/
 backend/package-lock.json
 
-# Frontend specific
+# Frontend specific (original - kept for backward compatibility)
 frontend/.env
 frontend/node_modules/
 frontend/dist/
 frontend/package-lock.json
+
+# Main Frontend (Desktop)
+main-frontend/.env
+main-frontend/node_modules/
+main-frontend/dist/
+main-frontend/package-lock.json
+main-frontend/.vite/
+
+# Branch Frontend (Mobile)
+branch-frontend/.env
+branch-frontend/node_modules/
+branch-frontend/dist/
+branch-frontend/package-lock.json
+branch-frontend/.vite/
