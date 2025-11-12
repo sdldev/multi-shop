@@ -333,6 +333,14 @@ router.put('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES
           message: roleValidation.message
         });
       }
+      
+      // Prevent users from modifying their own role (security measure)
+      if (parseInt(id) === req.user.id && role !== existingUser[0].role) {
+        return res.status(403).json({
+          success: false,
+          message: 'You cannot modify your own role'
+        });
+      }
     }
 
     if (password) {
@@ -434,6 +442,14 @@ router.put('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES
 router.delete('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Prevent users from deleting themselves (security measure)
+    if (parseInt(id) === req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You cannot delete your own account'
+      });
+    }
 
     const existingUser = await query('SELECT * FROM users WHERE user_id = ?', [id]);
 
