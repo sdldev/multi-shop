@@ -29,7 +29,7 @@ export default function Customers() {
     phone_number: '',
     code: '',
     address: '',
-    branch_id: '',
+    branch_id: user?.role === 'admin' ? '' : user?.branch_id?.toString() || '',
     status: 'Active',
     registration_date: new Date().toISOString().split('T')[0],
   });
@@ -169,7 +169,7 @@ export default function Customers() {
       phone_number: '',
       code: '',
       address: '',
-      branch_id: '',
+      branch_id: user?.role === 'admin' ? '' : user?.branch_id?.toString() || '',
       status: 'Active',
       registration_date: new Date().toISOString().split('T')[0],
     });

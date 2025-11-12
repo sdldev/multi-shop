@@ -8,6 +8,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useToast } from '../components/ui/use-toast';
+import { useFlashSuccess } from '../components/FlashSuccessProvider';
 import { LogIn, Store } from 'lucide-react';
 
 export default function Login() {
@@ -17,6 +18,7 @@ export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { showFlash } = useFlashSuccess();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,13 +30,12 @@ export default function Login() {
 
       dispatch(setCredentials({ user, accessToken, refreshToken }));
       
-      addToast({
-        title: 'Login successful',
-        description: `Welcome back, ${user.full_name}!`,
-        variant: 'success',
+      // Show flash success before navigation
+      showFlash(`Selamat datang, ${user.full_name}!`, {
+        icon: 'check',
+        onComplete: () => navigate('/')
       });
 
-      navigate('/dashboard');
     } catch (error) {
       addToast({
         title: 'Login failed',
@@ -98,11 +99,6 @@ export default function Login() {
               )}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Default Credentials:</p>
-            <p className="mt-1">Admin: <span className="font-mono">admin / Admin@123</span></p>
-            <p className="mt-1">Staff: <span className="font-mono">staff_jakarta / Staff@123</span></p>
-          </div>
         </CardContent>
       </Card>
     </div>

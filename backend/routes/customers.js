@@ -67,7 +67,7 @@ const router = express.Router();
  *                     totalPages:
  *                       type: integer
  */
-router.get('/', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
+router.get('/', authenticateToken, authorizeRole('admin', 'staff', 'HeadBranch', 'Staff'), async (req, res) => {
   try {
     const { branch_id, status, search } = req.query;
     let page = parseInt(req.query.page) || 1;
@@ -176,7 +176,7 @@ router.get('/', authenticateToken, authorizeRole('admin', 'staff'), async (req, 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
+router.get('/:id', authenticateToken, authorizeRole('admin', 'staff', 'HeadBranch', 'Staff'), async (req, res) => {
   try {
     const { id } = req.params;
     let sql = 'SELECT c.*, b.branch_name FROM customers c LEFT JOIN branches b ON c.branch_id = b.branch_id WHERE c.customer_id = ?';
@@ -268,7 +268,7 @@ router.get('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRateLimiter, authorizeBranch, async (req, res) => {
+router.post('/', authenticateToken, authorizeRole('admin', 'staff', 'HeadBranch', 'Staff'), customerRateLimiter, authorizeBranch, async (req, res) => {
   try {
     const { branch_id, full_name, email, phone_number, code, address, registration_date, status } = req.body;
 
@@ -404,7 +404,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'staff'), customerRat
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRole('admin', 'staff', 'HeadBranch', 'Staff'), async (req, res) => {
   try {
     const { id } = req.params;
     const { full_name, email, phone_number, code, address, status } = req.body;
@@ -513,7 +513,7 @@ router.put('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRole('admin', 'staff', 'HeadBranch', 'Staff'), async (req, res) => {
   try {
     const { id } = req.params;
 

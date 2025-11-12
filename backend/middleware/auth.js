@@ -70,27 +70,32 @@ export function authorizeRole(...roles) {
       });
     }
 
+    console.log(`[authorizeRole] User role: ${req.user.role}, Required roles: ${roles.join(', ')}, User type: ${req.user.type}`);
+    
     if (!roles.includes(req.user.role)) {
+      console.log(`[authorizeRole] Access DENIED - Role mismatch`);
       return res.status(403).json({ 
         success: false, 
         message: 'You do not have permission to access this resource' 
       });
     }
 
+    console.log(`[authorizeRole] Access GRANTED`);
     next();
   };
 }
 
 export function authorizeBranch(req, res, next) {
-  // Management users can access all branches
-  if (isManagement(req.user)) {
+  // Admin users can access all branches
+  if (req.user.role === 'admin') {
     return next();
   }
 
-  // Staff roles must be restricted to their branch
-  const branchId = req.params.branch_id || req.body.branch_id || req.query.branch_id;
+  // Staff variants: 'staff', 'HeadBranch', 'Staff'
+  // All staff roles must be restricted to their branch
+  const staffRoles = ['staff', 'HeadBranch', 'Staff'];
   
-  if (isStaff(req.user)) {
+  if (staffRoles.includes(req.user.role)) {
     if (!req.user.branch_id) {
       return res.status(403).json({ 
         success: false, 
@@ -98,13 +103,25 @@ export function authorizeBranch(req, res, next) {
       });
     }
 
+    // Get branch_id from params, body, or query
+    const branchId = req.params.branch_id || req.body.branch_id || req.query.branch_id;
+    
+    // If branch_id is provided, verify it matches staff's branch
     if (branchId && parseInt(branchId) !== parseInt(req.user.branch_id)) {
+      console.log(`[authorizeBranch] Access denied - Staff branch_id: ${req.user.branch_id}, Requested branch_id: ${branchId}`);
       return res.status(403).json({ 
         success: false, 
         message: 'You can only access data from your assigned branch' 
       });
     }
+
+    // If no branch_id provided in request, it's OK for staff (they'll use their own branch_id)
+    return next();
   }
 
-  next();
+  // If not admin or staff variant, deny access
+  return res.status(403).json({ 
+    success: false, 
+    message: 'You do not have permission to access this resource' 
+  });
 }

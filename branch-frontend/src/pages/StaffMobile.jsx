@@ -9,9 +9,12 @@ import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { useToast } from '../components/ui/use-toast';
 import { Phone, Mail, MapPin, Calendar, User, X, Users, UserPlus, FileText, Home, LogOut, Search, Copy, MessageCircle } from 'lucide-react';
+import StaffMobileLayout from '../components/StaffMobileLayout';
+import { useFlashSuccess } from '../components/FlashSuccessProvider';
 
 export default function StaffMobile() {
   const { addToast } = useToast();
+  const { showFlash } = useFlashSuccess();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [branch, setBranch] = useState(null);
@@ -22,7 +25,9 @@ export default function StaffMobile() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showTodoModal, setShowTodoModal] = useState(false);
-  const [currentView, setCurrentView] = useState('home'); // home, customer, profile
+  const [showSuccessView, setShowSuccessView] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState(null);
+  const [currentView, setCurrentView] = useState('home'); // home, customer, profile, success
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, totalPages: 0 });
   const [hasMore, setHasMore] = useState(true);
   const lastItemRef = useRef(null);
@@ -37,7 +42,8 @@ export default function StaffMobile() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    // Only fetch if user exists and has a valid branch_id
+    if (!user?.branch_id) return;
     fetchBranch();
     // Don't auto-fetch customers on view change - wait for user search
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,26 +148,9 @@ export default function StaffMobile() {
 
   if (!user) return null;
 
-  // Reusable Static Header Component
-  const StaticHeader = () => (
-    <div className="sticky top-0 z-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 rounded-lg shadow-lg -mx-4 mb-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-          <span className="text-xl">🏪</span>
-        </div>
-        <div>
-          <h1 className="text-base font-bold">{branch?.branch_name || 'BTH'}</h1>
-          <p className="text-xs opacity-90">{user?.full_name}</p>
-        </div>
-      </div>
-    </div>
-  );
-
   // Render Dashboard (Home)
   const renderHome = () => (
     <div className="space-y-6">
-      <StaticHeader />
-
       {/* Menu Grid */}
       <div className="grid grid-cols-2 gap-4">
         {/* Data Customer */}
@@ -220,9 +209,7 @@ export default function StaffMobile() {
   // Render Customer List
   const renderCustomerList = () => (
     <div className="space-y-4">
-      <StaticHeader />
-
-      {/* Search Bar - Outside Header */}
+      {/* Search Input */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -276,7 +263,7 @@ export default function StaffMobile() {
           )}
         </div>
       ) : (
-        <div className="space-y-3 pb-20">
+        <div className="space-y-3">
           {customers.map((c, index) => (
             <Card 
               key={c.customer_id} 
@@ -359,9 +346,7 @@ export default function StaffMobile() {
 
   // Render Profile
   const renderProfile = () => (
-    <div className="space-y-6 pb-20">
-      <StaticHeader />
-
+    <div className="space-y-6">
       {/* Profile Header */}
       <Card>
         <CardContent className="p-6 text-center">
@@ -465,13 +450,25 @@ export default function StaffMobile() {
         status: formData.status,
       };
 
-      await customersAPI.create(sanitizedData);
-      addToast({ title: 'Berhasil!', description: 'Customer berhasil ditambahkan', variant: 'success' });
+      const response = await customersAPI.create(sanitizedData);
+      
+      // Store customer data including branch info
+      const customerWithBranch = {
+        ...sanitizedData,
+        customer_id: response.data.data?.customer_id,
+        branch_name: branch?.branch_name
+      };
+      
+      setNewCustomerData(customerWithBranch);
       setShowAddModal(false);
       resetForm();
-      if (currentView === 'customer') {
-        fetchCustomers(query, 1, false);
-      }
+      
+      // Show flash success with callback to show success view
+      showFlash('Customer berhasil ditambahkan!', {
+        icon: 'check',
+        onComplete: () => setCurrentView('success')
+      });
+      
     } catch (error) {
       addToast({
         title: 'Error',
@@ -499,53 +496,200 @@ export default function StaffMobile() {
     try {
       await authAPI.logout();
       dispatch(logout());
-      addToast({ title: 'Logout', description: 'Anda telah logout', variant: 'default' });
+      // No need for toast/flash - user will be redirected to login immediately
     } catch (error) {
       dispatch(logout());
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
-      <div className="max-w-md mx-auto pb-24 px-4">
-        {currentView === 'home' && renderHome()}
-        {currentView === 'customer' && renderCustomerList()}
-        {currentView === 'profile' && renderProfile()}
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <div className="max-w-md mx-auto flex items-center justify-around p-2">
-          <button
-            onClick={() => setCurrentView('home')}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 ${
-              currentView === 'home' ? 'text-orange-500' : 'text-gray-500'
-            }`}
-          >
-            <Home className="h-6 w-6" />
-            <span className="text-xs font-medium">Beranda</span>
-          </button>
-          <button
-            onClick={() => setCurrentView('customer')}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 ${
-              currentView === 'customer' ? 'text-orange-500' : 'text-gray-500'
-            }`}
-          >
-            <Users className="h-6 w-6" />
-            <span className="text-xs font-medium">Customer</span>
-          </button>
-          <button
-            onClick={() => setCurrentView('profile')}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 ${
-              currentView === 'profile' ? 'text-orange-500' : 'text-gray-500'
-            }`}
-          >
-            <User className="h-6 w-6" />
-            <span className="text-xs font-medium">Profil</span>
-          </button>
+  // Render Success View - Show newly added customer
+  const renderSuccessView = () => (
+    <div className="space-y-4 pb-8">
+      {/* Success Message */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold text-green-800">Customer Berhasil Ditambahkan!</h3>
+            <p className="text-sm text-green-600">Data customer telah tersimpan di sistem</p>
+          </div>
         </div>
       </div>
+
+      {/* Customer Detail Card */}
+      {newCustomerData && (
+        <Card className="shadow-md">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="h-5 w-5 text-orange-600" />
+              Detail Customer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            {/* Name */}
+            <div className="flex items-start gap-3 pb-3 border-b">
+              <User className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">Nama Lengkap</p>
+                <p className="font-semibold text-gray-900 break-words">{newCustomerData.full_name}</p>
+              </div>
+            </div>
+
+            {/* Code */}
+            {newCustomerData.code && (
+              <div className="flex items-start gap-3 pb-3 border-b">
+                <FileText className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-1">Kode Customer</p>
+                  <p className="font-mono font-semibold text-gray-900">#{newCustomerData.code}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            <div className="flex items-start gap-3 pb-3 border-b">
+              <Mail className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">Email</p>
+                <p className="text-sm text-gray-900 break-words">{newCustomerData.email}</p>
+              </div>
+            </div>
+
+            {/* Phone */}
+            {newCustomerData.phone_number && (
+              <div className="flex items-start gap-3 pb-3 border-b">
+                <Phone className="h-5 w-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-1">Nomor Telepon</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900">{newCustomerData.phone_number}</p>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(newCustomerData.phone_number);
+                          showFlash('Nomor telepon disalin!', { icon: 'copy' });
+                        }}
+                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Salin nomor"
+                      >
+                        <Copy className="h-4 w-4 text-gray-600" />
+                      </button>
+                      <a
+                        href={`https://wa.me/${newCustomerData.phone_number.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-md hover:bg-green-50 transition-colors"
+                        title="WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4 text-green-600" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Address */}
+            {newCustomerData.address && (
+              <div className="flex items-start gap-3 pb-3 border-b">
+                <MapPin className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-1">Alamat</p>
+                  <p className="text-sm text-gray-900 break-words">{newCustomerData.address}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Registration Date */}
+            <div className="flex items-start gap-3 pb-3 border-b">
+              <Calendar className="h-5 w-5 text-indigo-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">Tanggal Registrasi</p>
+                <p className="text-sm text-gray-900">{formatDate(newCustomerData.registration_date)}</p>
+              </div>
+            </div>
+
+            {/* Branch */}
+            <div className="flex items-start gap-3 pb-3 border-b">
+              <Home className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">Cabang</p>
+                <p className="font-semibold text-gray-900">{newCustomerData.branch_name}</p>
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">Status</p>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  newCustomerData.status === 'Active' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {newCustomerData.status}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action Buttons */}
+      <div className="space-y-3 pt-2">
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          Tambah Customer Lagi
+        </Button>
+        
+        <Button
+          onClick={() => {
+            setCurrentView('customer');
+            setNewCustomerData(null);
+            // Auto search to show latest customers
+            setQuery('');
+            fetchCustomers('', 1, false);
+          }}
+          variant="outline"
+          className="w-full"
+        >
+          <Users className="h-4 w-4 mr-2" />
+          Lihat Daftar Customer
+        </Button>
+
+        <Button
+          onClick={() => {
+            setCurrentView('home');
+            setNewCustomerData(null);
+          }}
+          variant="outline"
+          className="w-full"
+        >
+          <Home className="h-4 w-4 mr-2" />
+          Kembali ke Beranda
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <StaffMobileLayout 
+      currentView={currentView} 
+      onViewChange={setCurrentView}
+      branch={branch}
+      user={user}
+    >
+      {currentView === 'home' && renderHome()}
+      {currentView === 'customer' && renderCustomerList()}
+      {currentView === 'profile' && renderProfile()}
+      {currentView === 'success' && renderSuccessView()}
 
       {/* Add Customer Modal */}
       {showAddModal && (
@@ -721,7 +865,7 @@ export default function StaffMobile() {
                             className="h-8 w-8"
                             onClick={() => {
                               navigator.clipboard?.writeText(selectedCustomer.phone_number);
-                              addToast({ title: 'Nomor telepon disalin!', variant: 'success' });
+                              showFlash('Nomor telepon disalin!', { icon: 'copy' });
                             }}
                           >
                             <Copy className="h-4 w-4 text-muted-foreground" />
@@ -855,6 +999,6 @@ export default function StaffMobile() {
           </Card>
         </div>
       )}
-    </div>
+    </StaffMobileLayout>
   );
 }
