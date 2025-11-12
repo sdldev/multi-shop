@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import validator from 'validator';
 import { staffAPI, branchesAPI } from '../utils/api';
 import { validatePassword } from '../utils/validation';
+import { STAFF_ROLE_OPTIONS } from '../constants/roles';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Select } from '../components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
@@ -28,6 +30,7 @@ export default function Staff() {
     code: '',
     address: '',
     branch_id: '',
+    role: 'Staff',
   });
 
   useEffect(() => {
@@ -92,6 +95,7 @@ export default function Staff() {
         code: formData.code ? validator.escape(formData.code.trim()) : '',
         address: formData.address ? validator.escape(formData.address.trim()) : '',
         branch_id: parseInt(formData.branch_id),
+        role: formData.role,
       };
 
       if (formData.password) {
@@ -139,6 +143,7 @@ export default function Staff() {
       code: staffMember.code || '',
       address: staffMember.address || '',
       branch_id: staffMember.branch_id.toString(),
+      role: staffMember.role || 'Staff',
     });
     setShowModal(true);
   };
@@ -178,6 +183,7 @@ export default function Staff() {
       code: '',
       address: '',
       branch_id: '',
+      role: 'Staff',
     });
   };
 
@@ -216,6 +222,7 @@ export default function Staff() {
                     <TableHead>Username</TableHead>
                     <TableHead>Full Name</TableHead>
                     <TableHead>Code</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Branch</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -227,6 +234,11 @@ export default function Staff() {
                       <TableCell className="font-medium">{staffMember.username}</TableCell>
                       <TableCell>{staffMember.full_name}</TableCell>
                       <TableCell>{staffMember.code || '-'}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                          {staffMember.role}
+                        </span>
+                      </TableCell>
                       <TableCell>{staffMember.branch_name}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -343,6 +355,21 @@ export default function Staff() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role *</Label>
+                  <Select
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    required
+                  >
+                    {STAFF_ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button

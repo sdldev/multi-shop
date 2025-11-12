@@ -2,9 +2,20 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
 import { query } from '../config/db.js';
-import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { authenticateToken, authorizeRole, USER_ROLES, STAFF_ROLES, isManagement } from '../middleware/auth.js';
 
 const router = express.Router();
+
+function validateStaffRole(role) {
+  const validRoles = Object.values(STAFF_ROLES);
+  if (!validRoles.includes(role)) {
+    return { 
+      valid: false, 
+      message: `Role must be one of: ${validRoles.join(', ')}` 
+    };
+  }
+  return { valid: true };
+}
 
 /**
  * @swagger
@@ -33,7 +44,7 @@ const router = express.Router();
  *                   items:
  *                     $ref: '#/components/schemas/Staff'
  */
-router.get('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { branch_id } = req.query;
     let sql = 'SELECT s.staff_id, s.branch_id, s.username, s.full_name, s.code, s.address, s.role, s.created_at, b.branch_name FROM staff s LEFT JOIN branches b ON s.branch_id = b.branch_id WHERE 1=1';
@@ -94,7 +105,7 @@ router.get('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -176,14 +187,24 @@ router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.post('/', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
-    const { branch_id, username, password, full_name, code, address } = req.body;
+    const { branch_id, username, password, full_name, code, address, role } = req.body;
 
     if (!branch_id || !username || !password || !full_name) {
       return res.status(400).json({
         success: false,
         message: 'branch_id, username, password, and full_name are required'
+      });
+    }
+
+    // Validate role if provided, default to Staff
+    const staffRole = role || STAFF_ROLES.STAFF;
+    const roleValidation = validateStaffRole(staffRole);
+    if (!roleValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: roleValidation.message
       });
     }
 
@@ -222,12 +243,13 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
       password_hash: passwordHash,
       full_name: validator.escape(full_name.trim()),
       code: code ? validator.escape(code.trim()) : null,
-      address: address ? validator.escape(address.trim()) : null
+      address: address ? validator.escape(address.trim()) : null,
+      role: staffRole
     };
 
     const result = await query(
       'INSERT INTO staff (branch_id, username, password_hash, full_name, code, address, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.code, sanitizedData.address, 'staff']
+      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.code, sanitizedData.address, sanitizedData.role]
     );
 
     const newStaff = await query(
@@ -304,10 +326,10 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
-    const { branch_id, username, password, full_name, code, address } = req.body;
+    const { branch_id, username, password, full_name, code, address, role } = req.body;
 
     const existingStaff = await query('SELECT * FROM staff WHERE staff_id = ?', [id]);
 
@@ -316,6 +338,17 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
         success: false,
         message: 'Staff not found'
       });
+    }
+
+    // Validate role if provided
+    if (role) {
+      const roleValidation = validateStaffRole(role);
+      if (!roleValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: roleValidation.message
+        });
+      }
     }
 
     if (branch_id) {
@@ -343,7 +376,8 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
       full_name: full_name ? validator.escape(full_name.trim()) : existingStaff[0].full_name,
       code: code !== undefined ? (code ? validator.escape(code.trim()) : null) : existingStaff[0].code,
       address: address !== undefined ? (address ? validator.escape(address.trim()) : null) : existingStaff[0].address,
-      password_hash: existingStaff[0].password_hash
+      password_hash: existingStaff[0].password_hash,
+      role: role || existingStaff[0].role
     };
 
     if (username && username !== existingStaff[0].username) {
@@ -363,8 +397,8 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
     }
 
     await query(
-      'UPDATE staff SET branch_id = ?, username = ?, password_hash = ?, full_name = ?, code = ?, address = ? WHERE staff_id = ?',
-      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.code, sanitizedData.address, id]
+      'UPDATE staff SET branch_id = ?, username = ?, password_hash = ?, full_name = ?, code = ?, address = ?, role = ? WHERE staff_id = ?',
+      [sanitizedData.branch_id, sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.code, sanitizedData.address, sanitizedData.role, id]
     );
 
     const updatedStaff = await query(
@@ -419,7 +453,7 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
 

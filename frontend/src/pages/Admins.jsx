@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import validator from 'validator';
 import { usersAPI } from '../utils/api';
 import { validatePassword } from '../utils/validation';
+import { USER_ROLE_OPTIONS } from '../constants/roles';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Select } from '../components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useToast } from '../components/ui/use-toast';
@@ -25,6 +27,7 @@ export default function Admins() {
     username: '',
     password: '',
     full_name: '',
+    role: 'Staff',
   });
 
   useEffect(() => {
@@ -72,6 +75,7 @@ export default function Admins() {
       const sanitizedData = {
         username: validator.escape(formData.username.trim()),
         full_name: validator.escape(formData.full_name.trim()),
+        role: formData.role,
       };
 
       if (formData.password) {
@@ -116,6 +120,7 @@ export default function Admins() {
       username: admin.username,
       password: '',
       full_name: admin.full_name,
+      role: admin.role || 'Staff',
     });
     setShowModal(true);
   };
@@ -152,6 +157,7 @@ export default function Admins() {
       username: '',
       password: '',
       full_name: '',
+      role: 'Staff',
     });
   };
 
@@ -292,6 +298,21 @@ export default function Admins() {
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role *</Label>
+                  <Select
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    required
+                  >
+                    {USER_ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button

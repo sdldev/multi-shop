@@ -2,9 +2,20 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
 import { query } from '../config/db.js';
-import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { authenticateToken, authorizeRole, USER_ROLES, isManagement } from '../middleware/auth.js';
 
 const router = express.Router();
+
+function validateUserRole(role) {
+  const validRoles = Object.values(USER_ROLES);
+  if (!validRoles.includes(role)) {
+    return { 
+      valid: false, 
+      message: `Role must be one of: ${validRoles.join(', ')}` 
+    };
+  }
+  return { valid: true };
+}
 
 function validatePassword(password) {
   const minLength = 8;
@@ -49,7 +60,7 @@ function validatePassword(password) {
  *                   items:
  *                     $ref: '#/components/schemas/User'
  */
-router.get('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const users = await query('SELECT user_id, username, full_name, role, created_at FROM users ORDER BY user_id DESC');
 
@@ -99,7 +110,7 @@ router.get('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -172,14 +183,24 @@ router.get('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.post('/', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
-    const { username, password, full_name } = req.body;
+    const { username, password, full_name, role } = req.body;
 
     if (!username || !password || !full_name) {
       return res.status(400).json({
         success: false,
         message: 'username, password, and full_name are required'
+      });
+    }
+
+    // Validate role if provided, default to Staff
+    const userRole = role || USER_ROLES.STAFF;
+    const roleValidation = validateUserRole(userRole);
+    if (!roleValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: roleValidation.message
       });
     }
 
@@ -215,19 +236,20 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
     const sanitizedData = {
       username: cleanUsername,
       password_hash: passwordHash,
-      full_name: validator.escape(full_name.trim())
+      full_name: validator.escape(full_name.trim()),
+      role: userRole
     };
 
     const result = await query(
       'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
-      [sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, 'admin']
+      [sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.role]
     );
 
     const newUser = await query('SELECT user_id, username, full_name, role, created_at FROM users WHERE user_id = ?', [result.insertId]);
 
     res.status(201).json({
       success: true,
-      message: 'Admin user created successfully',
+      message: 'User created successfully',
       data: newUser[0]
     });
   } catch (error) {
@@ -288,10 +310,10 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, password, full_name } = req.body;
+    const { username, password, full_name, role } = req.body;
 
     const existingUser = await query('SELECT * FROM users WHERE user_id = ?', [id]);
 
@@ -300,6 +322,25 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
         success: false,
         message: 'User not found'
       });
+    }
+
+    // Validate role if provided
+    if (role) {
+      const roleValidation = validateUserRole(role);
+      if (!roleValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: roleValidation.message
+        });
+      }
+      
+      // Prevent users from modifying their own role (security measure)
+      if (parseInt(id) === req.user.id && role !== existingUser[0].role) {
+        return res.status(403).json({
+          success: false,
+          message: 'You cannot modify your own role'
+        });
+      }
     }
 
     if (password) {
@@ -324,7 +365,8 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
     let sanitizedData = {
       username: cleanUsername,
       full_name: full_name ? validator.escape(full_name.trim()) : existingUser[0].full_name,
-      password_hash: existingUser[0].password_hash
+      password_hash: existingUser[0].password_hash,
+      role: role || existingUser[0].role
     };
 
     if (username && username !== existingUser[0].username) {
@@ -344,8 +386,8 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
     }
 
     await query(
-      'UPDATE users SET username = ?, password_hash = ?, full_name = ? WHERE user_id = ?',
-      [sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, id]
+      'UPDATE users SET username = ?, password_hash = ?, full_name = ?, role = ? WHERE user_id = ?',
+      [sanitizedData.username, sanitizedData.password_hash, sanitizedData.full_name, sanitizedData.role, id]
     );
 
     const updatedUser = await query('SELECT user_id, username, full_name, role, created_at FROM users WHERE user_id = ?', [id]);
@@ -397,9 +439,17 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Prevent users from deleting themselves (security measure)
+    if (parseInt(id) === req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You cannot delete your own account'
+      });
+    }
 
     const existingUser = await query('SELECT * FROM users WHERE user_id = ?', [id]);
 

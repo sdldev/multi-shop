@@ -1,7 +1,7 @@
 import express from 'express';
 import validator from 'validator';
 import { query } from '../config/db.js';
-import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { authenticateToken, authorizeRole, USER_ROLES } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -220,7 +220,7 @@ router.get('/:id', authenticateToken, authorizeRole('admin', 'staff'), async (re
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.post('/', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { branch_name, address, phone_number, manager_name } = req.body;
 
@@ -309,7 +309,7 @@ router.post('/', authenticateToken, authorizeRole('admin'), async (req, res) => 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
     const { branch_name, address, phone_number, manager_name } = req.body;
@@ -390,7 +390,7 @@ router.put('/:id', authenticateToken, authorizeRole('admin'), async (req, res) =
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRole(USER_ROLES.OWNER, USER_ROLES.MANAGER, USER_ROLES.HEAD_BRANCH_MANAGER, USER_ROLES.MANAGEMENT), async (req, res) => {
   try {
     const { id } = req.params;
 

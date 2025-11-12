@@ -21,18 +21,18 @@ CREATE TABLE branches (
   INDEX idx_name (branch_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Users table (Admin accounts)
+-- Users table (Management accounts with various roles)
 CREATE TABLE users (
   user_id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(100),
-  role VARCHAR(20) DEFAULT 'admin' NOT NULL,
+  role VARCHAR(30) DEFAULT 'Staff' NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT chk_users_role CHECK (role = 'admin')
+  CONSTRAINT chk_users_role CHECK (role IN ('Owner', 'Manager', 'Head Branch Manager', 'Management', 'Warehouse', 'Staff'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Staff table (Branch-scoped staff accounts)
+-- Staff table (Branch-scoped staff accounts with various roles)
 CREATE TABLE staff (
   staff_id INT AUTO_INCREMENT PRIMARY KEY,
   branch_id INT NOT NULL,
@@ -41,10 +41,10 @@ CREATE TABLE staff (
   full_name VARCHAR(100),
   code VARCHAR(50),
   address VARCHAR(500),
-  role VARCHAR(20) DEFAULT 'staff' NOT NULL,
+  role VARCHAR(30) DEFAULT 'Staff' NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_staff_branch FOREIGN KEY (branch_id) REFERENCES branches(branch_id) ON DELETE CASCADE,
-  CONSTRAINT chk_staff_role CHECK (role = 'staff'),
+  CONSTRAINT chk_staff_role CHECK (role IN ('HeadBranch', 'Admin', 'Cashier', 'HeadCounter', 'Staff')),
   INDEX idx_branch (branch_id),
   INDEX idx_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

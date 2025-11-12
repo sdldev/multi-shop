@@ -88,11 +88,13 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 ## Tujuan Aplikasi
 1. **Sentralisasi Data**: Semua data cabang, staf, dan pelanggan tersimpan di satu database.
 2. **Kontrol Akses Berbasis Role (RBAC)**:
-   - **Admin Global**: Akses penuh ke semua cabang.
-   - **Staf Cabang**: Hanya akses ke cabang sendiri.
+   - **Management Users**: Multiple roles (Owner, Manager, Head Branch Manager, Management, Warehouse, Staff) with full system access
+   - **Branch Staff**: Multiple roles (HeadBranch, Admin, Cashier, HeadCounter, Staff) with branch-scoped access
 3. **Keamanan Tinggi**: Mencegah serangan XSS, SQL Injection, Brute Force, dan DDoS.
-4. **Otomatisasi**: Seeder data awal untuk cabang, admin, staf, dan pelanggan.
+4. **Otomatisasi**: Seeder data awal untuk cabang, management users, staff, dan pelanggan.
 5. **Responsif & User-Friendly**: Dashboard mobile-first dengan tema gelap/terang.
+
+📖 **[Role System Documentation](ROLE_SYSTEM_DOCUMENTATION.md)** - Complete guide to the multi-role system
 
 ---
 
@@ -101,11 +103,12 @@ Sistem ini dibangun dengan arsitektur modern, aman, dan skalabel, menggunakan:
 | Fitur | Deskripsi | Role |
 |------|---------|------|
 | **Login & Autentikasi** | JWT + Refresh Token | Semua |
-| **Dashboard** | Statistik cabang, pelanggan, staf | Admin & Staf |
-| **Manajemen Cabang** | CRUD cabang (nama, alamat, manager) | Admin |
-| **Manajemen Pelanggan** | CRUD pelanggan per cabang (email unik) | Admin & Staf |
-| **Manajemen Staf** | Buat akun staf per cabang | Admin |
-| **Manajemen Admin** | Buat admin baru (password kuat) | Admin |
+| **Dashboard** | Statistik cabang, pelanggan, staf | Management & Staff |
+| **Manajemen Cabang** | CRUD cabang (nama, alamat, manager) | Management |
+| **Manajemen Pelanggan** | CRUD pelanggan per cabang (email unik) | Management & Staff |
+| **Manajemen Staf** | Buat akun staf per cabang dengan role selection | Management |
+| **Manajemen Users** | Buat management user dengan role selection (Owner, Manager, etc) | Management |
+| **Multi-Role System** | 6 user roles + 5 staff roles dengan permission berbeda | Semua |
 | **Logout** | Hapus token, kembali ke login | Semua |
 
 ---

@@ -28,41 +28,78 @@ async function seedDatabase() {
       console.log(`   ✓ Created branch: ${branch.name}`);
     }
 
-    console.log('👤 Seeding admin users...');
+    console.log('👤 Seeding management users...');
     const adminPassword = await bcrypt.hash('CustPSW11!!', 10);
+    
+    // Create Owner
     await query(
       'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
-      ['superadmin', adminPassword, 'Super Admin', 'admin']
+      ['owner', adminPassword, 'System Owner', 'Owner']
     );
-    console.log('   ✓ Created admin user: admin (password: CustPSW11!!)');
+    console.log('   ✓ Created user: owner (Role: Owner, password: CustPSW11!!)');
 
+    // Create Manager
     await query(
       'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
-      ['admin', adminPassword, 'Admin', 'admin']
+      ['manager', adminPassword, 'General Manager', 'Manager']
     );
-    console.log('   ✓ Created admin user: admin2 (password: CustPSW11!!)');
+    console.log('   ✓ Created user: manager (Role: Manager, password: CustPSW11!!)');
+
+    // Create Head Branch Manager
+    await query(
+      'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
+      ['headbranch', adminPassword, 'Head Branch Manager', 'Head Branch Manager']
+    );
+    console.log('   ✓ Created user: headbranch (Role: Head Branch Manager, password: CustPSW11!!)');
+
+    // Create Management
+    await query(
+      'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
+      ['management', adminPassword, 'Management Staff', 'Management']
+    );
+    console.log('   ✓ Created user: management (Role: Management, password: CustPSW11!!)');
+
+    // Create Warehouse
+    await query(
+      'INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
+      ['warehouse', adminPassword, 'Warehouse Manager', 'Warehouse']
+    );
+    console.log('   ✓ Created user: warehouse (Role: Warehouse, password: CustPSW11!!)');
 
     console.log('👥 Seeding staff members...');
     const staffPassword = await bcrypt.hash('Staff@123', 10);
     const staffMembers = [
-      { branch_id: branchIds[0], username: 'katokopws', full_name: 'Ari retno', code: 'STF-JKT-001', address: 'Jl. Kemanggisan No. 10, Jakarta' },
-      { branch_id: branchIds[0], username: 'adminpsw', full_name: 'Lisa Siapa', code: 'STF-JKT-002', address: 'Jl. Palmerah No. 15, Jakarta' },
-      { branch_id: branchIds[0], username: 'kasirpsw', full_name: 'Rina Siapa', code: 'STF-BDG-001', address: 'Jl. Cibaduyut No. 20, Bandung' },
+      { branch_id: branchIds[0], username: 'headbranch_bth', full_name: 'Kepala Cabang BTH', code: 'STF-BTH-001', address: 'Jl. Kemanggisan No. 10, Batanghari', role: 'HeadBranch' },
+      { branch_id: branchIds[0], username: 'admin_bth', full_name: 'Admin BTH', code: 'STF-BTH-002', address: 'Jl. Palmerah No. 15, Batanghari', role: 'Admin' },
+      { branch_id: branchIds[0], username: 'cashier_bth', full_name: 'Kasir BTH', code: 'STF-BTH-003', address: 'Jl. Cibaduyut No. 20, Batanghari', role: 'Cashier' },
+      { branch_id: branchIds[1], username: 'headbranch_sbr', full_name: 'Kepala Cabang SBR', code: 'STF-SBR-001', address: 'Jl. Dago No. 25, Simbaringin', role: 'HeadBranch' },
+      { branch_id: branchIds[1], username: 'headcounter_sbr', full_name: 'Kepala Counter SBR', code: 'STF-SBR-002', address: 'Jl. Braga No. 30, Simbaringin', role: 'HeadCounter' },
+      { branch_id: branchIds[2], username: 'staff_psw', full_name: 'Staff PSW', code: 'STF-PSW-001', address: 'Jl. Basuki No. 40, Pringsewu', role: 'Staff' },
     ];
 
     for (const staff of staffMembers) {
       await query(
         'INSERT INTO staff (branch_id, username, password_hash, full_name, code, address, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [staff.branch_id, staff.username, staffPassword, staff.full_name, staff.code, staff.address, 'staff']
+        [staff.branch_id, staff.username, staffPassword, staff.full_name, staff.code, staff.address, staff.role]
       );
-      console.log(`   ✓ Created staff: ${staff.username} (password: Staff@123)`);
+      console.log(`   ✓ Created staff: ${staff.username} (Role: ${staff.role}, password: Staff@123)`);
     }
 
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📝 Login credentials:');
-    console.log('   Super Admin: superadmin / CustPSW11!!');
-    console.log('   Admin: admin / CustPSW11!!');
-    console.log('   Staff: staff_jakarta / Staff@123 (and other staff accounts)');
+    console.log('   Management Users:');
+    console.log('     - Owner: owner / CustPSW11!!');
+    console.log('     - Manager: manager / CustPSW11!!');
+    console.log('     - Head Branch Manager: headbranch / CustPSW11!!');
+    console.log('     - Management: management / CustPSW11!!');
+    console.log('     - Warehouse: warehouse / CustPSW11!!');
+    console.log('   Staff (all password: Staff@123):');
+    console.log('     - headbranch_bth (HeadBranch - BTH)');
+    console.log('     - admin_bth (Admin - BTH)');
+    console.log('     - cashier_bth (Cashier - BTH)');
+    console.log('     - headbranch_sbr (HeadBranch - SBR)');
+    console.log('     - headcounter_sbr (HeadCounter - SBR)');
+    console.log('     - staff_psw (Staff - PSW)');
     console.log('\n🚀 You can now start the server with: npm run dev');
 
   } catch (error) {
